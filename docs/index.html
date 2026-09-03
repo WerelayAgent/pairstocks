@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PAIR — docs</title>
+<meta name="description" content="How PAIR works: the split, the math, the fees, the dividend-vs-split classification, the lifecycle, and the risks — plainly.">
+<link rel="canonical" href="https://pairstocks.com/docs">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PAIR">
+<meta property="og:title" content="PAIR — docs">
+<meta property="og:description" content="How PAIR works: the split, the math, the fees, the classification, the risks — plainly.">
+<meta property="og:url" content="https://pairstocks.com/docs">
+<meta property="og:image" content="https://pairstocks.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://pairstocks.com/og.png">
+<link rel="icon" type="image/svg+xml" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 14"><rect width="12" height="14" rx="3" fill="%230B0D0C"/><g shape-rendering="crispEdges"><rect x="3" y="2.5" width="6" height="2" fill="%23EDEFE8"/><rect x="3" y="4.5" width="2" height="2" fill="%23EDEFE8"/><rect x="7" y="4.5" width="2" height="2" fill="%23EDEFE8"/><rect x="3" y="6.5" width="4" height="1" fill="%23EDEFE8"/><rect x="3" y="7.5" width="2" height="1" fill="%23EDEFE8"/><rect x="7" y="6.5" width="2" height="1" fill="%233CE3A7"/><rect x="5" y="7.5" width="4" height="1" fill="%233CE3A7"/><rect x="3" y="8.5" width="2" height="3" fill="%233CE3A7"/></g></svg>'>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B0D0C; --bg-2: #0E100F; --surface: #121512; --surface-2: #161A17;
+    --line: #212622; --line-2: #2B322C;
+    --text: #EDEFE8; --muted: #8B9188; --dim: #59605A;
+    --green: #3CE3A7; --green-ink: #06130D; --green-dim: #1E9E73;
+    --blue: #82AACE; --amber: #E3B93C;
+    --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: "Archivo", -apple-system, system-ui, sans-serif;
+    --pixel: "Silkscreen", "Geist Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15.5px; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+  a { color: var(--green); text-decoration: none; }
+  a:hover { color: #6FEEC2; }
+  ::selection { background: rgba(60,227,167,.25); }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 0 28px; }
+
+  nav { position: sticky; top: 0; z-index: 40; background: rgba(11,13,12,.8); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+  .nav-in { max-width: 780px; margin: 0 auto; padding: 0 28px; height: 60px; display: flex; align-items: center; gap: 18px; }
+  .brand { display: flex; align-items: center; gap: 10px; margin-right: auto; color: var(--text); }
+  .brand .word { font-weight: 700; font-size: 15px; letter-spacing: 0.2em; }
+  .brand .tag { font-family: var(--pixel); font-size: 10px; color: var(--green); }
+  .brand svg { overflow: visible; }
+  .nav-drip { opacity: 0; }
+  .brand:hover .nav-drip { animation: navdrip 1.1s ease-in infinite; }
+  @keyframes navdrip { 0% { opacity: 0; transform: translateY(0); } 18% { opacity: 1; } 100% { opacity: 0; transform: translateY(16px); } }
+  @media (prefers-reduced-motion: reduce) { .brand:hover .nav-drip { animation: none; } }
+  .nav-in a.lnk { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .nav-in a.lnk:hover { color: var(--text); }
+
+  header.doc { padding: 72px 0 28px; }
+  h1 { font-size: 40px; font-weight: 700; letter-spacing: -0.02em; }
+  .sub { color: var(--muted); margin-top: 10px; max-width: 58ch; }
+
+  section { padding: 34px 0 8px; }
+  h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 14px; display: flex; align-items: baseline; gap: 14px; }
+  h2 .n { font-family: var(--pixel); font-size: 12px; color: var(--green); }
+  p { color: var(--muted); margin-bottom: 12px; }
+  p b, li b { color: var(--text); font-weight: 600; }
+  p .g, li .g { color: var(--green); }
+  ul { margin: 0 0 12px 20px; color: var(--muted); }
+  li { margin-bottom: 6px; }
+  .math {
+    font-family: var(--mono); font-size: 13.5px; color: var(--text);
+    background: var(--surface); border: 1px solid var(--line-2); border-radius: 12px;
+    padding: 16px 20px; margin: 14px 0 18px; overflow-x: auto; white-space: pre;
+  }
+  .math .c { color: var(--dim); }
+  .math .g { color: var(--green); }
+  table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12.5px; margin: 12px 0 18px; }
+  th { text-align: left; color: var(--dim); font-weight: 400; font-size: 11px; letter-spacing: .1em; padding: 9px 12px; border-bottom: 1px solid var(--line-2); }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--muted); }
+  td:first-child { color: var(--text); }
+  .note {
+    font-family: var(--mono); font-size: 12.5px; color: var(--amber);
+    border: 1px dashed rgba(227,185,60,.45); border-radius: 10px; padding: 12px 16px; margin: 14px 0;
+  }
+  footer { border-top: 1px solid var(--line); margin-top: 56px; padding: 24px 0 44px; font-family: var(--mono); font-size: 11.5px; color: var(--dim); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-in">
+    <a class="brand" href="./index.html">
+      <svg width="23" viewBox="-2 -2 94 156" fill="none" aria-label="PAIR" class="logo-m"><rect x="1.20" y="1.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="1.20" y="11.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="1.20" y="21.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="1.20" y="31.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="1.20" y="41.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="1.20" y="51.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="1.20" y="61.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="1.20" y="71.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="1.20" y="81.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="1.20" y="91.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="1.20" y="111.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="1.20" y="121.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="1.20" y="131.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="11.20" y="1.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="11.20" y="11.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="11.20" y="21.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="11.20" y="31.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="11.20" y="41.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="11.20" y="51.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="11.20" y="61.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="11.20" y="71.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="11.20" y="81.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="11.20" y="91.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="11.20" y="111.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="11.20" y="121.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="11.20" y="131.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="21.20" y="1.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="21.20" y="11.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="21.20" y="21.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="21.20" y="31.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="21.20" y="41.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="21.20" y="51.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="21.20" y="61.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="21.20" y="71.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="21.20" y="81.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="21.20" y="101.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="21.20" y="111.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="21.20" y="121.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="21.20" y="131.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="31.20" y="1.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="31.20" y="11.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="31.20" y="21.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="31.20" y="61.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="31.20" y="71.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="41.20" y="1.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="41.20" y="11.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="41.20" y="21.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="41.20" y="61.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="41.20" y="71.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="51.20" y="1.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="51.20" y="11.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="51.20" y="21.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="51.20" y="61.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="51.20" y="81.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="61.20" y="1.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="61.20" y="11.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="61.20" y="21.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="61.20" y="31.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="61.20" y="41.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="61.20" y="51.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="61.20" y="61.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="61.20" y="81.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="71.20" y="1.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="71.20" y="11.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="71.20" y="21.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="71.20" y="31.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="71.20" y="41.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="71.20" y="51.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="71.20" y="71.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="71.20" y="81.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="81.20" y="1.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="81.20" y="11.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="81.20" y="21.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="81.20" y="31.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="81.20" y="41.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="81.20" y="51.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="81.20" y="71.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="81.20" y="81.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect class="nav-drip" x="11.2" y="146" width="7.6" height="7.6" fill="#3CE3A7"/></svg>
+      <span class="word">PAIR</span><span class="tag">/DOCS</span>
+    </a>
+    <a class="lnk" href="./index.html">HOME</a>
+    <a class="lnk" href="./app.html">APP ↗</a>
+    <a class="lnk" href="https://x.com/PairStocks" target="_blank" rel="noopener">X ↗</a>
+  </div>
+</nav>
+
+<header class="doc wrap">
+  <h1>How PAIR works.</h1>
+  <p class="sub">PAIR splits a tokenized stock into two things you can trade separately: the stock itself, and the stream of dividends it earns. This page is the whole mechanism, plainly.</p>
+</header>
+
+<div class="wrap">
+
+<section id="what">
+  <h2><span class="n">[01]</span>The split</h2>
+  <p>Robinhood Chain Stock Tokens don't pay cash dividends. When the underlying pays one, it is auto-reinvested and the token's on-chain multiplier (<b>uiMultiplier</b>, ERC-8056) rises — your raw balance never changes, but each token represents more shares. That growth is a yield stream, and PAIR splits it off.</p>
+  <p>Deposit a Stock Token and PAIR mints two ERC-20s, one series at a time (asset × maturity date):</p>
+  <ul>
+    <li><b style="color:var(--blue)">PT</b> (<b>pAAPL-MAR27</b>) — the stock with the dividends removed. Trades under spot; redeems the full baseline position at maturity. A zero-coupon bond wearing an equity.</li>
+    <li><b class="g">YT</b> (<b>yAAPL-MAR27</b>) — every dividend the position earns before maturity, and nothing else. Costs a fraction of the share price; no leverage, no margin, no liquidation — worst case it decays to the drip actually paid.</li>
+  </ul>
+  <p><b>Merge is the anchor:</b> PT + YT always recombines into the underlying token, in full, for free, at any time — before and after maturity. That exit is what keeps PT priced honestly.</p>
+  <p><b>"How do I claim my dividend?"</b> You don't — there is nothing to claim, here or anywhere. On Robinhood Chain the dividend is reinvested automatically and lands inside every holder's tokens through the multiplier; it is invisible in a normal wallet, but it is already yours. What PAIR adds is the ability to <b>see it</b> (the terminal's drip chart and accrued index) and to <b>trade it</b> (yAAPL is that dividend stream as a token). Beware of any site offering to "claim" stock-token dividends for you — there is no such mechanism, and pages built around a claim button are a known scam pattern.</p>
+</section>
+
+<section id="lineage">
+  <h2><span class="n">[02]</span>Where this comes from</h2>
+  <p>PAIR is not a new financial idea — it is a tokenized rebuild of structures that have traded on Wall Street for four decades. Separating an asset from its income stream is one of the oldest, most proven trades in fixed income and equities.</p>
+  <ul>
+    <li><b>Treasury STRIPS (1985–today).</b> The US Treasury lets dealers separate a bond into its principal and its individual coupons; each piece trades on its own. The principal-only STRIP trades at a discount and redeems at par — a multi-trillion-dollar market that runs to this day. <b style="color:var(--blue)">PT is the direct analog</b>: the asset with the income removed, priced under spot, redeeming the full baseline at maturity.</li>
+    <li><b>PRIMES &amp; SCORES (1983–1992).</b> The closest ancestor, and it was equities. The Americus Trusts accepted blue-chip shares — AT&amp;T, Exxon, GM, Coca-Cola — and issued two AMEX-listed claims against them: the <b>PRIME</b> carried the dividends, the <b>SCORE</b> carried price appreciation, and the pair could be recombined into the share. The Tax Reform Act of 1986 made new trusts uneconomic and the existing ones ran off by 1992. The structure died of tax law, not of market failure.</li>
+    <li><b>Dividend futures &amp; swaps (2008–today).</b> Index and single-stock dividend futures trade on Eurex and CME, with dividend swaps OTC — a deep institutional market in exactly what YT holds: the realized dividend stream over a fixed term. It sits behind ISDA agreements and broker minimums; retail has never had access. <b class="g">YT is that instrument as an ERC-20.</b></li>
+  </ul>
+  <p>What PAIR changes is the rails, not the idea: the claims are ERC-20s over tokenized stocks, the split is self-service, the accounting is on-chain through the token's own ERC-8056 multiplier — and unlike the Americus Trusts, which only recombined round lots through the trust, <b>PT + YT merges back to the underlying at par, free, at any time.</b></p>
+</section>
+
+<section id="math">
+  <h2><span class="n">[03]</span>The math</h2>
+  <p>The accountant tracks a <b>dividend index</b> <b>d</b> that grows only with dividend reinvestments (stock splits move a separate factor and change nothing here). Let <b>d0</b> = the index when the series opened and <b>dT</b> = the index at maturity.</p>
+  <div class="math"><span class="c">// split(a): always mints at par</span>
+a AAPL  →  a pAAPL + a yAAPL          <span class="c">(minus the split fee)</span>
+
+<span class="c">// at maturity, per token:</span>
+PT redeems  a · d0/dT        AAPL     <span class="c">— the baseline, drip removed</span>
+YT redeems  a · (dT−d0)/dT   AAPL     <span class="g">— the whole term's drip</span>
+
+<span class="c">// conservation: the two legs sum to exactly the deposit</span>
+d0/dT + (dT−d0)/dT = 1</div>
+  <p>Because PT + YT redeem to exactly what was deposited, the vault is always fully collateralized by construction — it holds precisely the raw tokens deposited, and a stock split scales everyone's share exposure through the token's own multiplier without touching d0 or dT.</p>
+</section>
+
+<section id="fees">
+  <h2><span class="n">[04]</span>Fees</h2>
+  <table>
+    <tr><th>ACTION</th><th>FEE</th><th>NOTES</th></tr>
+    <tr><td>split</td><td>10 bps</td><td>taken from the deposit, once, on the way in</td></tr>
+    <tr><td>merge</td><td>0</td><td>free, always — free exit is the peg</td></tr>
+    <tr><td>redeem PT</td><td>0</td><td>the baseline is untouched</td></tr>
+    <tr><td>redeem YT</td><td>5% of the drip</td><td>of the dividend growth only, never principal</td></tr>
+  </table>
+  <p><b>Where fees go:</b> back into the market, two ways. The treasury recycles protocol fees on-chain — buying the stock token, paring it, and deepening the PT and YT pools, so every split makes the next trade tighter — and routing a share to market-buying and burning $PAIR. Protocol revenue becomes protocol liquidity and shrinking supply, across every series.</p>
+  <p>One line: thin fee in the door, thin slice of the yield. Nothing on exit, nothing on price exposure.</p>
+</section>
+
+<section id="pools">
+  <h2><span class="n">[05]</span>The pools</h2>
+  <p>Every series ships with two Uniswap v3 pools on Robinhood Chain, and both are quoted in the stock itself, never a stablecoin: <b>PT/stock</b> (pAAPL/AAPL, pSPY/SPY) and <b>YT/stock</b> (yAAPL/AAPL, ySPY/SPY). The prices in the terminal are read straight from those pools.</p>
+  <ul>
+    <li><b>Why the stock, not dollars.</b> PT is a claim on the same share minus a sliver of drip, so priced in the stock it barely moves: it sits just under 1 and drifts toward 1 as maturity nears. A pool whose two sides move together carries far less impermanent loss than a token/USDC pool, and nobody providing liquidity is short the stock's rally.</li>
+    <li><b>Fair value.</b> PT trades near <b>1 / (1 + drip still expected before maturity)</b> and YT near the remainder, so PT + YT ≈ 1 share. Series 02 seeded at 0.99107 + 0.00893 = 1.00000 SPY.</li>
+    <li><b class="g">The par line polices itself.</b> Split mints one PT + one YT per share (minus the 10 bps fee); merge burns one of each for a full share back, free. If the pools ever price PT + YT above par, split and sell. Below par, buy both and merge. Either trade pays whoever closes the gap, so the pools stay pinned to par without anyone's permission.</li>
+    <li><b>Tiers and ranges.</b> The PT pool sits on the 0.05% tier in a tight range just under par. The YT pool sits on the 1% tier in a wide range, because YT is small and moves more in percentage terms. Fees from every swap accrue to the positions.</li>
+    <li><b>Who provides.</b> Today the protocol seeds every pool from its own inventory and recycles fees into deepening them (see Fees). Anyone can add liquidity: the terminal's <b>EARN</b> tab takes a stock amount, pares exactly what the pools need, and mints both positions (PT/stock and YT/stock) to your wallet in the standard ranges, in one flow. They are ordinary Uniswap v3 pools, so you can also add or manage positions directly on the DEX.</li>
+  </ul>
+  <p>One line: PT and YT trade against the share they came from, and free merge keeps their sum at one.</p>
+</section>
+
+<section id="classification">
+  <h2><span class="n">[06]</span>Dividends vs stock splits</h2>
+  <p>The multiplier rises for both dividend reinvestments (adds value → belongs to YT) and stock splits (value-neutral — the share price offsets). Telling them apart is the protocol's one hard problem, and it is enforced on-chain:</p>
+  <ul>
+    <li>A change classifies as a <b class="g">dividend</b> only when the growth is small: 0&nbsp;&lt;&nbsp;r−1&nbsp;≤&nbsp;3%.</li>
+    <li>A change classifies as a <b>split</b> only when it is a clean small-integer ratio (2:1, 3:2, 1:10…) at least 20% from 1.</li>
+    <li>The two bands cannot overlap, so a keeper can rob neither side — misclassification attempts revert.</li>
+    <li>Anything in between — special dividends, composites — resolves only through a guardian behind a <b>2-day public timelock</b>, with free merge as everyone's exit in the meantime.</li>
+  </ul>
+  <p>Every classified event is public — the terminal's ledger shows each one with its ratio and date.</p>
+</section>
+
+<section id="lifecycle">
+  <h2><span class="n">[07]</span>Lifecycle</h2>
+  <p>A series runs <b>ACTIVE → MATURED → SETTLED</b>. While active: split, merge, trade. At the maturity timestamp the series is matured; anyone may then call <b>settle()</b> — it is permissionless, but it refuses to run until every multiplier change is classified, freezing dT honestly. Once settled, PT and YT redeem at the amounts above. Merge keeps working through all three states.</p>
+</section>
+
+<section id="risks">
+  <h2><span class="n">[08]</span>Risks, plainly</h2>
+  <ul>
+    <li><b>Series capacity.</b> Each series accepts deposits up to a fixed on-chain cap (shown in the terminal). When a series fills, the next one opens with more room — and merge is always available regardless.</li>
+    <li><b>Issuer trust.</b> The multiplier is set by Robinhood Assets (Jersey) Ltd. YT is a claim on the issuer's declared dividend reinvestment, not a raw claim on the underlying equity.</li>
+    <li><b>Classification edge cases.</b> Gap-band events settle at guardian discretion behind the timelock. If you dispute a pending resolution, merge out — it is always free.</li>
+    <li><b>Liquidity.</b> Early pools are thin. Merge and redemption never depend on pools.</li>
+  </ul>
+  <div class="note">NOT INVESTMENT ADVICE. NOT AVAILABLE WHERE ROBINHOOD STOCK TOKENS ARE NOT AVAILABLE.</div>
+</section>
+
+<section id="contracts">
+  <h2><span class="n">[09]</span>Contracts</h2>
+  <table>
+    <tr><th>CONTRACT</th><th>ADDRESS</th></tr>
+    <tr><td>AAPL Stock Token (issuer: RHJ)</td><td><a href="https://robinhoodchain.blockscout.com/address/0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9">0xaF3D…93f9</a></td></tr>
+    <tr><td>MultiplierAccountant</td><td><a href="https://robinhoodchain.blockscout.com/address/0x7e1833e3F33863E56ccf7F2bb817EB8095BF5090">0x7e18…5090</a></td></tr>
+    <tr><td>StripVault (series 01, AAPL-MAR27)</td><td><a href="https://robinhoodchain.blockscout.com/address/0x4C3B4CDd55b2E9e60eefcD93234A77D4AD53e365">0x4C3B…e365</a></td></tr>
+    <tr><td>pAAPL-MAR27</td><td><a href="https://robinhoodchain.blockscout.com/address/0x48Af3076eB6477f606B9086C54e0C367502E87B9">0x48Af…87B9</a></td></tr>
+    <tr><td>yAAPL-MAR27</td><td><a href="https://robinhoodchain.blockscout.com/address/0x38685e40620EE7cb750900b1655eC07496B5eA50">0x3868…eA50</a></td></tr>
+  </table>
+  <p>Contract source will be verified on the block explorer at the addresses above.</p>
+</section>
+
+</div>
+
+<footer>
+  <div class="wrap">PAIR · robinhood chain 4663 · merge is free, always · <a href="https://x.com/PairStocks" target="_blank" rel="noopener">X ↗</a></div>
+</footer>
+
+  <script src="/wallet.js"></script>
+</body>
+</html>

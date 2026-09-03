@@ -1,0 +1,1397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PAIR — terminal</title>
+<meta name="description" content="The PAIR terminal: pair, merge, and redeem Robinhood Chain Stock Tokens; track the dividend index, classified multiplier events, and your positions.">
+<link rel="canonical" href="https://pairstocks.com/app">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PAIR">
+<meta property="og:title" content="PAIR — terminal">
+<meta property="og:description" content="Pair, merge, and redeem tokenized stocks. Track the drip.">
+<meta property="og:url" content="https://pairstocks.com/app">
+<meta property="og:image" content="https://pairstocks.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://pairstocks.com/og.png">
+<link rel="icon" type="image/svg+xml" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 14"><rect width="12" height="14" rx="3" fill="%230B0D0C"/><g shape-rendering="crispEdges"><rect x="3" y="2.5" width="6" height="2" fill="%23EDEFE8"/><rect x="3" y="4.5" width="2" height="2" fill="%23EDEFE8"/><rect x="7" y="4.5" width="2" height="2" fill="%23EDEFE8"/><rect x="3" y="6.5" width="4" height="1" fill="%23EDEFE8"/><rect x="3" y="7.5" width="2" height="1" fill="%23EDEFE8"/><rect x="7" y="6.5" width="2" height="1" fill="%233CE3A7"/><rect x="5" y="7.5" width="4" height="1" fill="%233CE3A7"/><rect x="3" y="8.5" width="2" height="3" fill="%233CE3A7"/></g></svg>'>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B0D0C; --bg-2: #0E100F; --surface: #121512; --surface-2: #161A17;
+    --line: #212622; --line-2: #2B322C;
+    --text: #EDEFE8; --muted: #8B9188; --dim: #59605A;
+    --green: #3CE3A7; --green-ink: #06130D; --green-dim: #1E9E73;
+    --blue: #82AACE; --blue-dim: #4A708F;
+    --amber: #E3B93C;
+    --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: "Archivo", -apple-system, system-ui, sans-serif;
+    --pixel: "Silkscreen", "Geist Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--sans); font-size: 14.5px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  #drip-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+  a { color: var(--text); text-decoration: none; }
+  ::selection { background: rgba(60,227,167,.25); }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+  .mono { font-family: var(--mono); }
+
+  /* ── top bar ─────────────────────────────────────────── */
+  nav {
+    position: sticky; top: 0; z-index: 40;
+    background: rgba(11,13,12,.8); backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-in { max-width: 1240px; margin: 0 auto; padding: 0 24px; height: 60px; display: flex; align-items: center; gap: 18px; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand .word { font-weight: 700; font-size: 15px; letter-spacing: 0.2em; }
+  .brand .app-tag { font-family: var(--pixel); font-size: 10px; color: var(--green); margin-left: 2px; }
+  .brand svg { overflow: visible; }
+  .nav-drip { opacity: 0; }
+  .brand:hover .nav-drip { animation: navdrip 1.1s ease-in infinite; }
+  @keyframes navdrip { 0% { opacity: 0; transform: translateY(0); } 18% { opacity: 1; } 100% { opacity: 0; transform: translateY(16px); } }
+  @media (prefers-reduced-motion: reduce) { .brand:hover .nav-drip { animation: none; } }
+  .series-pill {
+    font-family: var(--mono); font-size: 12px; color: var(--text);
+    border: 1px solid var(--line-2); border-radius: 5px; padding: 7px 13px;
+    display: flex; gap: 9px; align-items: center; margin-right: auto;
+  }
+  .series-pill .st { font-family: var(--pixel); font-size: 9.5px; color: var(--green); }
+  .pos-lp { border-top: 1px dashed var(--line-2); padding-top: 12px; }
+  .pos-lp .ttl { font-family: var(--pixel); font-size: 9.5px; letter-spacing: .12em; color: var(--dim); margin-bottom: 8px; }
+  .pos-lp .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px dashed var(--line-2); font-family: var(--mono); font-size: 12.5px; }
+  .pos-lp .row .l { color: var(--text); }
+  .pos-lp .row .l small { color: var(--muted); display: block; margin-top: 3px; font-size: 11.5px; }
+  .pos-lp .row .l small.out { color: var(--amber); }
+  .pos-lp .wd { font-family: var(--pixel); font-size: 9px; letter-spacing: .08em; color: var(--text); background: none;
+    border: 1px solid var(--line-2); border-radius: 5px; padding: 8px 11px; cursor: pointer; white-space: nowrap; }
+  .pos-lp .wd:hover { border-color: var(--green); color: var(--green); }
+  .pos-lp .wd:disabled { opacity: .5; cursor: default; }
+  .series-wrap { position: relative; margin-right: auto; }
+  .series-wrap .series-pill { margin-right: 0; cursor: pointer; user-select: none; }
+  .series-pill:hover { border-color: var(--line); }
+  .series-menu {
+    position: absolute; top: calc(100% + 8px); left: 0; min-width: 235px; z-index: 60;
+    background: var(--surface, #121512); border: 1px solid var(--line-2); border-radius: 7px;
+    padding: 6px; box-shadow: 0 14px 34px rgba(0, 0, 0, .5);
+  }
+  .series-menu a {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 16px;
+    padding: 10px 12px; border-radius: 5px; text-decoration: none;
+    font-family: var(--mono); font-size: 12.5px; color: var(--text); letter-spacing: .04em;
+  }
+  .series-menu a:hover { background: rgba(60, 227, 167, .07); }
+  .series-menu a .no { font-family: var(--pixel); font-size: 9px; color: var(--dim); }
+  .series-menu a.on { color: var(--green); }
+  .series-menu a.on .no { color: var(--green); }
+  /* status tag: square terminal chip, pixel dot — no capsule */
+  .pill {
+    font-family: var(--pixel); font-size: 9.5px; letter-spacing: .05em; color: var(--muted);
+    border: 1px solid var(--line-2); border-radius: 5px; padding: 6px 11px;
+    display: flex; align-items: center; gap: 8px; white-space: nowrap;
+  }
+  .pill .dot { width: 6px; height: 6px; background: var(--green); box-shadow: 0 0 8px rgba(60,227,167,.8); }
+  .pill.pre .dot { background: var(--amber); box-shadow: 0 0 8px rgba(227,185,60,.6); }
+  .btn {
+    font-family: var(--sans); font-weight: 600; font-size: 13.5px; cursor: pointer;
+    border: 0; border-radius: 10px; padding: 10px 18px;
+    background: var(--green); color: var(--green-ink);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 26px -10px rgba(60,227,167,.55); }
+  .btn:disabled { background: var(--line-2); color: var(--dim); cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line-2); }
+  .btn.ghost:hover { border-color: var(--green-dim); box-shadow: none; }
+
+  /* ── state ribbon ────────────────────────────────────── */
+  .ribbon { display: flex; align-items: center; gap: 20px; padding: 18px 0 22px; flex-wrap: wrap; }
+  .lifecycle { display: flex; align-items: center; gap: 10px; font-family: var(--pixel); font-size: 10.5px; color: var(--dim); }
+  .lifecycle .ph { padding: 5px 11px; border: 1px solid var(--line); border-radius: 7px; }
+  .lifecycle .ph.on { color: var(--green-ink); background: var(--green); border-color: var(--green); }
+  .lifecycle .sep { color: var(--line-2); }
+  .ribbon .spacer { flex: 1; }
+  .ribbon .meta { font-family: var(--mono); font-size: 11.5px; color: var(--muted); display: flex; gap: 20px; }
+  .ribbon .meta b { color: var(--text); font-weight: 500; }
+
+  /* ── layout grid ─────────────────────────────────────── */
+  .grid { display: grid; grid-template-columns: 7fr 5fr; gap: 18px; padding-bottom: 72px; }
+  .col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+  .col > section:last-of-type { flex: 1; } /* bottom-align the two columns */
+  .card {
+    background: linear-gradient(180deg, var(--surface-2), var(--surface));
+    border: 1px solid var(--line-2); border-radius: 16px; padding: 22px 24px;
+  }
+  .card h2 {
+    font-family: var(--pixel); font-size: 11px; font-weight: 400; color: var(--dim);
+    letter-spacing: .06em; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .card h2 .hint { font-family: var(--mono); font-size: 10.5px; color: var(--dim); letter-spacing: 0; }
+
+  /* ── terminal card ───────────────────────────────────── */
+  .tabs { display: flex; gap: 6px; margin-bottom: 18px; }
+  .tab {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .08em; cursor: pointer;
+    background: none; border: 1px solid var(--line); color: var(--muted);
+    border-radius: 9px; padding: 8px 18px; transition: all .15s;
+  }
+  .tab.on { color: var(--green-ink); background: var(--green); border-color: var(--green); font-weight: 500; }
+  .tab:not(.on):hover { border-color: var(--line-2); color: var(--text); }
+  .amt-box {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    background: var(--bg-2); border: 1px solid var(--line-2); border-radius: 12px; padding: 16px 18px;
+  }
+  .amt-box:focus-within { border-color: var(--green-dim); }
+  .amt-box input {
+    font-family: var(--mono); font-size: 30px; font-weight: 500; width: 100%;
+    background: none; border: 0; color: var(--text); outline: none;
+  }
+  .amt-box .asset { font-family: var(--mono); font-size: 13px; color: var(--muted); display: flex; flex-direction: column; align-items: flex-end; gap: 3px; white-space: nowrap; }
+  .amt-box .asset .bal { font-size: 10.5px; color: var(--dim); cursor: pointer; }
+  .txmsg { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 10px; word-break: break-word; white-space: pre-wrap; min-height: 0; }
+  .txmsg:empty { display: none; }
+  .txmsg.ok { color: var(--green); }
+  .txmsg.bad { color: var(--red); }
+  .txmsg.dim { color: var(--dim); }
+  .amt-box .asset .bal:hover { color: var(--green); }
+  .preview { margin: 14px 0 18px; }
+  .prow { display: flex; justify-content: space-between; align-items: center; font-family: var(--mono); font-size: 13px; padding: 10px 4px; border-bottom: 1px solid var(--line); }
+  .prow:last-child { border-bottom: 0; }
+  .prow .k { color: var(--dim); font-size: 11.5px; letter-spacing: .06em; }
+  .prow .v { color: var(--text); }
+  .prow .v.pt { color: var(--blue); }
+  .prow .v.yt { color: var(--green); }
+  .prow .v.dim { color: var(--dim); }
+  .exec { width: 100%; padding: 14px; font-size: 15px; letter-spacing: .1em; border-radius: 12px; }
+
+  /* ── chart card ──────────────────────────────────────── */
+  .chart-wrap { position: relative; }
+  .chart-wrap svg { display: block; width: 100%; height: auto; }
+  .tooltip {
+    position: absolute; pointer-events: none; display: none;
+    background: var(--bg-2); border: 1px solid var(--line-2); border-radius: 8px;
+    padding: 8px 11px; font-family: var(--mono); font-size: 11px; color: var(--muted);
+    white-space: nowrap; z-index: 5; transform: translate(-50%, -110%);
+  }
+  .tooltip b { color: var(--green); font-weight: 500; }
+  .chart-foot { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10.5px; color: var(--dim); margin-top: 8px; }
+
+  /* ── right column cards ──────────────────────────────── */
+  .kv { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--mono); font-size: 12.5px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .kv:first-of-type { border-top: 0; padding-top: 0; }
+  .kv .k { color: var(--dim); font-size: 11px; letter-spacing: .06em; }
+  .kv .v { color: var(--text); }
+  .kv .v.g { color: var(--green); }
+  .kv .v.b { color: var(--blue); }
+  .kv .v.a { color: var(--amber); }
+  .pos-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 13px; }
+  .pos-row:first-of-type { border-top: 0; padding-top: 2px; }
+  .chip { font-size: 11px; border-radius: 4px; padding: 3px 10px; border: 1px solid var(--line-2); color: var(--muted); }
+  .chip.pt { color: var(--blue); border-color: rgba(130,170,206,.35); }
+  .chip.yt { color: var(--green); border-color: rgba(60,227,167,.35); }
+  .pos-row .b { color: var(--text); }
+  .ledger { display: flex; flex-direction: column; }
+  .lrow { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 12px; }
+  .lrow:first-of-type { border-top: 0; }
+  .lrow .tag { font-family: var(--pixel); font-size: 9px; padding: 3px 8px; border-radius: 6px; }
+  .lrow .tag.div { color: var(--green); border: 1px solid rgba(60,227,167,.4); }
+  .lrow .tag.split { color: var(--blue); border: 1px solid rgba(130,170,206,.4); }
+  .lrow .tag.pend { color: var(--amber); border: 1px solid rgba(227,185,60,.4); }
+  .lrow .what { color: var(--text); }
+  .lrow .when { margin-left: auto; color: var(--dim); font-size: 11px; }
+
+  .sim-note {
+    font-family: var(--pixel); font-size: 9.5px; color: var(--amber);
+    border: 1px dashed rgba(227,185,60,.45); border-radius: 8px; padding: 7px 12px;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .sim-note[hidden] { display: none; }
+
+  footer { border-top: 1px solid var(--line); padding: 22px 0 34px; font-family: var(--mono); font-size: 11px; color: var(--dim); }
+  footer .wrap { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+
+  @media (max-width: 920px) {
+    .grid { grid-template-columns: 1fr; }
+    .tabs { flex-wrap: wrap; }
+    .nav-in { flex-wrap: wrap; height: auto; padding: 10px 24px; }
+    .series-pill { margin-right: 0; }
+  }
+</style>
+</head>
+<body>
+<canvas id="drip-bg" aria-hidden="true"></canvas>
+
+<nav>
+  <div class="nav-in">
+    <a class="brand" href="./index.html">
+      <svg width="23" viewBox="-2 -2 94 156" fill="none" aria-label="PAIR" class="logo-m"><rect x="1.20" y="1.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="1.20" y="11.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="1.20" y="21.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="1.20" y="31.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="1.20" y="41.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="1.20" y="51.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="1.20" y="61.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="1.20" y="71.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="1.20" y="81.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="1.20" y="91.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="1.20" y="111.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="1.20" y="121.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="1.20" y="131.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="11.20" y="1.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="11.20" y="11.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="11.20" y="21.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="11.20" y="31.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="11.20" y="41.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="11.20" y="51.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="11.20" y="61.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="11.20" y="71.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="11.20" y="81.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="11.20" y="91.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="11.20" y="111.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="11.20" y="121.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="11.20" y="131.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="21.20" y="1.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="21.20" y="11.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="21.20" y="21.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="21.20" y="31.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="21.20" y="41.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="21.20" y="51.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="21.20" y="61.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="21.20" y="71.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="21.20" y="81.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="21.20" y="101.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="21.20" y="111.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="21.20" y="121.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="21.20" y="131.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="31.20" y="1.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="31.20" y="11.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="31.20" y="21.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="31.20" y="61.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="31.20" y="71.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="41.20" y="1.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="41.20" y="11.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="41.20" y="21.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="41.20" y="61.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="41.20" y="71.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="51.20" y="1.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="51.20" y="11.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="51.20" y="21.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="51.20" y="61.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="51.20" y="81.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="61.20" y="1.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="61.20" y="11.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="61.20" y="21.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="61.20" y="31.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="61.20" y="41.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="61.20" y="51.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="61.20" y="61.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="61.20" y="81.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="71.20" y="1.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="71.20" y="11.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="71.20" y="21.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="71.20" y="31.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="71.20" y="41.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="71.20" y="51.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="71.20" y="71.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="71.20" y="81.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="81.20" y="1.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="81.20" y="11.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="81.20" y="21.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="81.20" y="31.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="81.20" y="41.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="81.20" y="51.20" width="7.60" height="7.60" fill="#EDEFE8"/><rect x="81.20" y="71.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect x="81.20" y="81.20" width="7.60" height="7.60" fill="#3CE3A7"/><rect class="nav-drip" x="11.2" y="146" width="7.6" height="7.6" fill="#3CE3A7"/></svg>
+      <span class="word">PAIR</span><span class="app-tag">/TERMINAL</span>
+    </a>
+    <div class="series-wrap">
+      <div class="series-pill" id="seriesPill" role="button" tabindex="0" aria-haspopup="true" title="switch series"><span class="st" id="seriesNo">SERIES 01</span><span id="seriesName">AAPL · MAR27</span><span class="st">▾</span></div>
+      <div class="series-menu" id="seriesMenu" hidden></div>
+    </div>
+    <a href="./docs.html" style="font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.08em">DOCS</a>
+    <a href="https://x.com/PairStocks" target="_blank" rel="noopener" style="font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.08em">X ↗</a>
+    <span class="pill pre" id="statusPill"><span class="dot"></span><span id="statusText">SIMULATED</span></span>
+    <button class="btn" id="connect" style="padding: 9px 16px; font-size: 13px">Connect</button>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="ribbon">
+    <div class="lifecycle" aria-label="series lifecycle">
+      <span class="ph on" id="phActive">ACTIVE</span><span class="sep">──</span>
+      <span class="ph" id="phMatured">MATURED</span><span class="sep">──</span>
+      <span class="ph" id="phSettled">SETTLED</span>
+    </div>
+    <button class="btn" id="settleBtn" hidden style="padding: 8px 16px; font-size: 12px; letter-spacing: .08em">SETTLE SERIES</button>
+    <button class="btn" id="classifyBtn" hidden style="padding: 8px 16px; font-size: 12px; letter-spacing: .08em; background: var(--amber)">CLASSIFY EVENT</button>
+    <div class="spacer"></div>
+    <div class="meta">
+      <span>maturity <b id="mMaturity">—</b></span>
+      <span><b id="mDays">—</b> days left</span>
+      <span>accountant <b id="mSync">—</b></span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- ── left: terminal + chart ── -->
+    <div class="col">
+      <section class="card">
+        <h2>PAIR / MERGE / REDEEM <span class="hint" id="feeHint">fee 10 bps in · 0 out</span></h2>
+        <div class="tabs" role="tablist">
+          <button class="tab on" data-tab="pair">PAIR</button>
+          <button class="tab" data-tab="swap">SWAP</button>
+          <button class="tab" data-tab="earn">EARN</button>
+          <button class="tab" data-tab="merge">MERGE</button>
+          <button class="tab" data-tab="redeem">REDEEM</button>
+        </div>
+
+        <div id="panelPare">
+          <div class="amt-box">
+            <input id="amtPare" value="100.00" inputmode="decimal" aria-label="amount to pair">
+            <div class="asset"><span>AAPL</span><span class="bal" id="balPare">bal —</span></div>
+          </div>
+          <div class="preview">
+            <div class="prow"><span class="k">YOU MINT</span><span class="v pt" id="outPt">— pAAPL-MAR27</span></div>
+            <div class="prow"><span class="k"></span><span class="v yt" id="outYt">— yAAPL-MAR27</span></div>
+            <div class="prow"><span class="k">FEE</span><span class="v dim" id="outFee">— AAPL</span></div>
+          </div>
+          <button class="btn exec" id="execPare">PAIR</button>
+          <div class="txmsg" id="msgPare"></div>
+        </div>
+
+        <div id="panelSwap" hidden>
+          <div style="display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap">
+            <button class="tab dir on" data-dir="buyPt">BUY pAAPL</button>
+            <button class="tab dir" data-dir="sellPt">SELL pAAPL</button>
+            <button class="tab dir" data-dir="buyYt">BUY yAAPL</button>
+            <button class="tab dir" data-dir="sellYt">SELL yAAPL</button>
+          </div>
+          <div class="amt-box">
+            <input id="amtSwap" value="0.10" inputmode="decimal" aria-label="amount to swap">
+            <div class="asset"><span id="swapInSym">AAPL</span><span class="bal" id="balSwap">bal —</span></div>
+          </div>
+          <div class="preview">
+            <div class="prow"><span class="k">YOU RECEIVE ≈</span><span class="v" id="swapOut">—</span></div>
+            <div class="prow"><span class="k">POOL PRICE</span><span class="v dim" id="swapPrice">—</span></div>
+            <div class="prow"><span class="k">PRICE IMPACT</span><span class="v dim" id="swapImpact">—</span></div>
+            <div class="prow"><span class="k">MIN RECEIVED</span><span class="v dim" id="swapMin">— (slippage guard)</span></div>
+          </div>
+          <button class="btn exec" id="execSwap">SWAP</button>
+          <div class="txmsg" id="msgSwap"></div>
+        </div>
+
+        <div id="panelEarn" hidden>
+          <p class="hint" style="margin:0 0 14px; line-height:1.55">Add liquidity to this series' pools. Commit AAPL; the terminal pares exactly what the pools need and opens two positions in your wallet, pAAPL/AAPL and yAAPL/AAPL, in the standard ranges. Every swap pays fees to those positions.</p>
+          <div class="amt-box">
+            <input id="amtEarn" value="1.00" inputmode="decimal" aria-label="amount of stock to provide">
+            <div class="asset"><span>AAPL</span><span class="bal" id="balEarn">bal —</span></div>
+          </div>
+          <div class="preview">
+            <div class="prow"><span class="k">WILL PAIR</span><span class="v" id="earnPare">—</span></div>
+            <div class="prow"><span class="k">pAAPL POOL</span><span class="v pt" id="earnPt">—</span></div>
+            <div class="prow"><span class="k">yAAPL POOL</span><span class="v yt" id="earnYt">—</span></div>
+            <div class="prow"><span class="k">POOL PRICES</span><span class="v dim" id="earnPx">—</span></div>
+          </div>
+          <button class="btn exec" id="execEarn">PROVIDE LIQUIDITY</button>
+          <div class="txmsg" id="msgEarn"></div>
+          <div class="hint" id="earnResult" style="margin-top:10px; line-height:1.6"></div>
+          <div id="earnPositions" style="margin-top:16px"></div>
+        </div>
+
+        <div id="panelMerge" hidden>
+          <div class="amt-box">
+            <input id="amtMerge" value="100.00" inputmode="decimal" aria-label="amount to merge">
+            <div class="asset"><span>pAAPL + yAAPL</span><span class="bal" id="balMerge">max —</span></div>
+          </div>
+          <div class="preview">
+            <div class="prow"><span class="k">YOU RECEIVE</span><span class="v" id="outMerge">— AAPL</span></div>
+            <div class="prow"><span class="k">FEE</span><span class="v dim">0 — merge is always free</span></div>
+          </div>
+          <button class="btn exec" id="execMerge">MERGE</button>
+          <div class="txmsg" id="msgMerge"></div>
+        </div>
+
+        <div id="panelRedeem" hidden>
+          <div class="preview" style="margin-top: 2px">
+            <div class="prow"><span class="k">pAAPL-MAR27</span><span class="v" id="redPtBal">—</span></div>
+            <div class="prow"><span class="k">REDEEMS</span><span class="v b" id="redPtOut">— AAPL</span></div>
+          </div>
+          <button class="btn exec ghost" id="execRedeemPt" disabled>REDEEM PT — after maturity</button>
+          <div class="preview" style="margin-top: 18px">
+            <div class="prow"><span class="k">yAAPL-MAR27</span><span class="v" id="redYtBal">—</span></div>
+            <div class="prow"><span class="k">REDEEMS</span><span class="v yt" id="redYtOut">— AAPL (the drip, − 5% yield fee)</span></div>
+          </div>
+          <button class="btn exec ghost" id="execRedeemYt" disabled>REDEEM YT — after maturity</button>
+          <div class="txmsg" id="msgRedeem"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>THE DRIP — DIVIDEND INDEX, THIS TERM <span class="hint" id="chartLatest">—</span></h2>
+        <div class="chart-wrap" id="chartWrap">
+          <svg id="chart" viewBox="0 0 640 220" preserveAspectRatio="none" role="img" aria-label="Dividend index over the term"></svg>
+          <div class="tooltip" id="chartTip"></div>
+        </div>
+        <div class="chart-foot"><span id="chartX0">—</span><span>■ classified dividend</span><span id="chartX1">—</span></div>
+      </section>
+    </div>
+
+    <!-- ── right: positions, series, ledger ── -->
+    <div class="col">
+      <section class="card">
+        <h2>POSITIONS</h2>
+        <div id="posList">
+          <div class="pos-row"><span class="chip">AAPL</span><span class="b" id="posStock">—</span></div>
+          <div class="pos-row"><span class="chip pt">pAAPL-MAR27</span><span class="b" id="posPt">—</span></div>
+          <div class="pos-row"><span class="chip yt">yAAPL-MAR27</span><span class="b" id="posYt">—</span></div>
+        </div>
+        <div class="kv" style="margin-top: 6px"><span class="k">DRIP ACCRUED ON YT</span><span class="v g" id="posDrip">—</span></div>
+      </section>
+
+      <section class="card">
+        <h2>SERIES</h2>
+        <div class="kv"><span class="k">uiMultiplier</span><span class="v" id="sMult">—</span></div>
+        <div class="kv"><span class="k">DIVIDEND INDEX</span><span class="v g" id="sIdx">—</span></div>
+        <div class="kv"><span class="k">SPLIT FACTOR</span><span class="v" id="sSplit">—</span></div>
+        <div class="kv"><span class="k">NEXT SCHEDULED EVENT</span><span class="v" id="sNext">—</span></div>
+        <div class="kv"><span class="k">CLASSIFICATION</span><span class="v" id="sClass">—</span></div>
+        <div class="kv"><span class="k">VAULT CAPACITY</span><span class="v" id="sCap">—</span></div>
+        <div class="kv"><span class="k">PT POOL</span><span class="v" id="sPtPool">—</span></div>
+        <div class="kv"><span class="k">YT POOL</span><span class="v" id="sYtPool">—</span></div>
+      </section>
+
+      <section class="card">
+        <h2>LEDGER — CLASSIFIED MULTIPLIER EVENTS</h2>
+        <div class="ledger" id="ledger"></div>
+      </section>
+
+      <div class="sim-note" id="simNote" hidden>SIMULATED DATA — CONTRACTS NOT DEPLOYED. NUMBERS ARE ILLUSTRATIVE.</div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>PAIR / TERMINAL · robinhood chain 4663</span>
+    <span>merge is free, always — free exit is the peg · <a href="https://x.com/PairStocks" target="_blank" rel="noopener" style="color:var(--muted)">X ↗</a></span>
+  </div>
+</footer>
+
+<script>
+/* Ambient background: the drip — sparse pixel cells falling slowly behind the interface.
+   Brand-native (dividend cells breaking off), not a grid. Nearly subliminal by design. */
+(() => {
+  const cv = document.getElementById("drip-bg");
+  const cx = cv.getContext("2d");
+  const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let cells = [], W = 0, H = 0;
+  const COLORS = ["#1E9E73", "#2B322C", "#3CE3A7", "#3B4740"];
+  const spawn = (top) => ({
+    x: Math.random() * W,
+    y: top ? -6 : Math.random() * H,
+    s: 2 + Math.floor(Math.random() * 4),          // 2–5 px cells
+    v: 4 + Math.random() * 14,                      // px per second — a slow drip
+    c: COLORS[Math.random() < 0.12 ? 2 : (Math.random() < 0.5 ? 0 : (Math.random() < 0.5 ? 1 : 3))],
+    a: 0.04 + Math.random() * 0.09,
+  });
+  const size = () => {
+    W = cv.width = innerWidth; H = cv.height = innerHeight;
+    cells = Array.from({ length: Math.max(14, Math.round(W * H / 60000)) }, () => spawn(false));
+  };
+  const draw = () => {
+    cx.clearRect(0, 0, W, H);
+    for (const p of cells) {
+      cx.globalAlpha = p.a;
+      cx.fillStyle = p.c;
+      cx.fillRect(Math.round(p.x), Math.round(p.y), p.s, p.s);
+    }
+    cx.globalAlpha = 1;
+  };
+  size();
+  addEventListener("resize", size);
+  if (still) { draw(); return; }
+  let last = performance.now();
+  const tick = (now) => {
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    for (let i = 0; i < cells.length; i++) {
+      cells[i].y += cells[i].v * dt;
+      if (cells[i].y > H + 8) cells[i] = spawn(true);
+    }
+    draw();
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+<script>
+/* PAIR terminal — single file, no build step. Fill CONFIG after deploy.
+   With no vault configured the app runs on clearly-labeled SIMULATED data. */
+const CONFIG = {
+  chainId: 4663,
+  rpcUrl: "https://rpc.mainnet.chain.robinhood.com",
+  apiUrl: "/api/series", // cached read-only snapshot for visitors with no wallet and no RPC
+  stockToken: "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+  accountant: "0x7e1833e3F33863E56ccf7F2bb817EB8095BF5090", // deployed 2026-09-02
+  vault: "0x4C3B4CDd55b2E9e60eefcD93234A77D4AD53e365",
+  seriesTag: "AAPL-MAR27",
+  symbol: "AAPL",
+  splitFeeBps: 10,
+  ytYieldFeeBps: 500,
+  // secondary market (Uniswap v3 on Robinhood Chain)
+  pt: "0x48Af3076eB6477f606B9086C54e0C367502E87B9",
+  yt: "0x38685e40620EE7cb750900b1655eC07496B5eA50",
+  uniFactory: "0x1f7d7550B1b028f7571E69A784071F0205FD2EfA",
+  swapRouter: "0xCaf681a66D020601342297493863E78C959E5cb2", // SwapRouter02
+  positionManager: "0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3", // NonfungiblePositionManager (EARN tab)
+  ptFee: 500, ytFee: 10000, // pool fee tiers
+  ptRange: [0.9883, 0.9999], ytRange: [0.00185, 0.00738], // seeded LP ranges (series 01)
+  remainingDripPct: 0.22, // rough remaining drip to maturity, for fair-value display
+};
+
+const VAULT_ABI = [
+  "function split(uint256) returns (uint256)",
+  "function merge(uint256)",
+  "function redeemPT(uint256) returns (uint256)",
+  "function redeemYT(uint256) returns (uint256)",
+  "function settle()",
+  "function maturity() view returns (uint64)",
+  "function settled() view returns (bool)",
+  "function dividendIndex0() view returns (uint256)",
+  "function depositCap() view returns (uint256)",
+  "function accruedDripFactor() view returns (uint256)",
+  "function pt() view returns (address)",
+  "function yt() view returns (address)",
+];
+const ACCT_ABI = [
+  "function dividendIndex() view returns (uint256)",
+  "function splitFactor() view returns (uint256)",
+  "function isSynced() view returns (bool)",
+  "function checkpointCount() view returns (uint256)",
+  "function checkpointAt(uint256) view returns (tuple(uint64 timestamp, uint192 index))",
+  "function sync() returns (bool)",
+  "function classifyDividend()",
+  "function classifySplit(uint256 num, uint256 den)",
+  "function pending() view returns (bool exists, bool collapsed, uint64 timestamp, uint256 oldMultiplier, uint256 newMultiplier)",
+];
+const TOKEN_ABI = [
+  "function uiMultiplier() view returns (uint256)",
+  "function newUIMultiplier() view returns (uint256)",
+  "function effectiveAt() view returns (uint256)",
+  "function balanceOf(address) view returns (uint256)",
+  "function approve(address,uint256) returns (bool)",
+  "function allowance(address,address) view returns (uint256)",
+];
+const UNI_FACTORY_ABI = ["function getPool(address,address,uint24) view returns (address)"];
+const UNI_POOL_ABI = [
+  "function slot0() view returns (uint160 sqrtPriceX96, int24 tick, uint16, uint16, uint16, uint8, bool)",
+  "function liquidity() view returns (uint128)",
+  "function token0() view returns (address)",
+];
+const NPM_ABI = [
+  "function mint((address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint256 amount0Desired, uint256 amount1Desired, uint256 amount0Min, uint256 amount1Min, address recipient, uint256 deadline)) payable returns (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1)",
+  "function balanceOf(address) view returns (uint256)",
+  "function tokenOfOwnerByIndex(address, uint256) view returns (uint256)",
+  "function positions(uint256) view returns (uint96 nonce, address operator, address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, uint128 tokensOwed0, uint128 tokensOwed1)",
+  "function decreaseLiquidity((uint256 tokenId, uint128 liquidity, uint256 amount0Min, uint256 amount1Min, uint256 deadline)) payable returns (uint256 amount0, uint256 amount1)",
+  "function collect((uint256 tokenId, address recipient, uint128 amount0Max, uint128 amount1Max)) payable returns (uint256 amount0, uint256 amount1)",
+  "function burn(uint256 tokenId) payable",
+  "function multicall(bytes[] data) payable returns (bytes[] results)",
+];
+const ROUTER_ABI = [
+  "function exactInputSingle((address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96)) payable returns (uint256 amountOut)",
+];
+
+/* Live series. CONFIG's literals above are series 01 (AAPL); picking another series
+   overlays its fields. Selected with ?series=… or the pill switcher in the nav. */
+const SERIES = {
+  aapl: { n: "01", symbol: "AAPL", seriesTag: "AAPL-MAR27" }, // matches the CONFIG defaults
+  spy: {
+    n: "02",
+    stockToken: "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+    accountant: "0xf527Dc06a887DaE78FA400dbFC4757A5110EAE05", // deployed 2026-09-03
+    vault: "0x38EAE2c04F65861cD17914100125826de2b735c7",
+    pt: "0xE8b23dD27b1F4fEA3d036B2856a018507558d2d2",
+    yt: "0xFC0A61673f6ee415C0A85B83758F878002C3b777",
+    seriesTag: "SPY-MAR27",
+    symbol: "SPY",
+    apiUrl: "/api/series?series=spy",
+    ptRange: [0.9831, 0.997], ytRange: [0.00447, 0.01787], // as seeded 2026-09-03
+    remainingDripPct: 0.75, // SPY drips ~1.1%/yr — ~0.75% left to MAR27 (the seeding assumption)
+  },
+  schd: { // deployed but parked until SCHD gets DEX liquidity; reachable via ?series=schd
+    n: "03", hidden: true,
+    stockToken: "0xd63ABB2C13d7a8421a8017a712802053568e3C1D",
+    accountant: "0x4E25F8eAFC2fEc3895851ED2d6BE0c5bFb4Fa781", // deployed 2026-09-03
+    vault: "0x3a6A3621C42A68fcA176AB907AB25896484EcCD8",
+    pt: "0xEaB5e9cc7244F314A502aC2Ae1B28981ef56EBDB",
+    yt: "0x1b9BF8a74b9ca2117Ac86B3A258d39ED2fA9979d",
+    seriesTag: "SCHD-MAR27",
+    symbol: "SCHD",
+    apiUrl: "/api/series?series=schd",
+    ptRange: [0.964, 0.999], ytRange: [0.0098, 0.0392],
+    remainingDripPct: 2.0, // SCHD drips ~3.5%/yr — ~2% left to MAR27
+  },
+};
+
+/* URL overrides: point any deploy of this page at any contracts without a rebuild —
+   ?series=schd, or per-key ?rpcUrl=…&stockToken=0x…&accountant=0x…&vault=0x…&chainId=… */
+{
+  const qp = new URLSearchParams(location.search);
+  CONFIG.series = (qp.get("series") || "aapl").toLowerCase();
+  if (!SERIES[CONFIG.series]) CONFIG.series = "aapl";
+  const { n, hidden, ...overlay } = SERIES[CONFIG.series];
+  Object.assign(CONFIG, overlay);
+  CONFIG.seriesNo = n;
+  for (const k of ["rpcUrl", "stockToken", "accountant", "vault", "chainId", "symbol", "seriesTag", "pt", "yt", "uniFactory", "swapRouter", "positionManager"]) {
+    const v = qp.get(k);
+    if (v) CONFIG[k] = k === "chainId" ? Number(v) : v;
+  }
+  if (qp.get("npm")) CONFIG.positionManager = qp.get("npm");
+  for (const k of ["ptRange", "ytRange"]) { // ?ptRange=lo,hi — the LP band the EARN tab and health rows use
+    const v = (qp.get(k) || "").split(",").map(Number);
+    if (v.length === 2 && v.every((n) => n > 0)) CONFIG[k] = v;
+  }
+}
+
+/* The markup is written against series 01; swap the ticker everywhere for other series. */
+if (CONFIG.symbol !== "AAPL") {
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  while (w.nextNode()) {
+    if (w.currentNode.nodeValue.includes("AAPL"))
+      w.currentNode.nodeValue = w.currentNode.nodeValue.replaceAll("AAPL", CONFIG.symbol);
+  }
+}
+
+const $ = (id) => document.getElementById(id);
+const live = CONFIG.vault !== "";
+const fmt = (n, d = 4) =>
+  Number(n).toLocaleString("en-US", { minimumFractionDigits: Math.min(2, d), maximumFractionDigits: d });
+let provider = null, signer = null, account = null;
+
+/* nav series pill: shows the active series; click opens a menu of every live series */
+{
+  $("seriesNo").textContent = "SERIES " + CONFIG.seriesNo;
+  $("seriesName").textContent = CONFIG.symbol + " · " + (CONFIG.seriesTag.split("-")[1] || "");
+  const menu = $("seriesMenu");
+  menu.innerHTML = Object.entries(SERIES)
+    .filter(([k, s]) => !s.hidden || k === CONFIG.series) // parked series only shows if you're on it
+    .map(([k, s]) => {
+      const q = new URLSearchParams(location.search);
+      q.set("series", k);
+      return '<a href="?' + q.toString() + '"' + (k === CONFIG.series ? ' class="on"' : "") +
+        '><span class="no">SERIES ' + s.n + '</span><span>' + s.symbol + " · " + (s.seriesTag.split("-")[1] || "") + "</span></a>";
+    }).join("");
+  const toggle = () => { menu.hidden = !menu.hidden; };
+  $("seriesPill").addEventListener("click", (e) => { e.stopPropagation(); toggle(); });
+  $("seriesPill").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+  });
+  document.addEventListener("click", () => { menu.hidden = true; });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") menu.hidden = true; });
+}
+
+/* ── state (populated live, or simulated when pre-deploy) ── */
+const S = {
+  now: 0, // chain time when live; falls back to wall clock
+  maturity: 0, settled: false, dIndex0: 1, dIndex: 1, splitFactor: 1,
+  uiMultiplier: 1, synced: true, nextEvent: 0,
+  balances: { stock: 0, pt: 0, yt: 0 },
+  rawBal: { stock: 0n, pt: 0n, yt: 0n }, // exact on-chain (raw) units — what txs must use
+  swapDir: "buyPt",
+  poolAddr: null, // { pt, yt } — resolved once from the factory
+  poolPx: null, // { pt, yt } — AAPL per PT / AAPL per YT, from slot0
+  poolRaw: {},  // { pt: {sqrt, token0}, yt: {…} } — raw slot0, for the EARN tab and swap quotes
+  poolLiq: {},  // { pt, yt } — in-range liquidity, for real swap quotes
+  cap: 0, vaultBal: 0,
+  checkpoints: [], // [ts, index]
+  ledger: [],      // {kind, ratioPct|ratio, ts}
+};
+
+function simulate() {
+  const now = Date.now() / 1000;
+  const day = 86400;
+  const t0 = now - 128 * day;
+  S.maturity = now + 54 * day;
+  S.dIndex0 = 1.0;
+  S.checkpoints = [
+    [t0, 1.0],
+    [t0 + 33 * day, 1.0052],
+    [t0 + 61 * day, 1.0052 * 1.0049],
+    [t0 + 96 * day, 1.0052 * 1.0049 * 1.0055],
+  ];
+  S.dIndex = S.checkpoints[S.checkpoints.length - 1][1];
+  S.splitFactor = 1.0;
+  S.uiMultiplier = 1.042817;
+  S.synced = true;
+  S.nextEvent = now + 9 * day;
+  S.balances = { stock: 412.5, pt: 250.0, yt: 250.0 };
+  S.cap = 1000;
+  S.vaultBal = 637.4;
+  S.ledger = [
+    { kind: "div", what: "+0.55% reinvested", ts: t0 + 96 * day },
+    { kind: "div", what: "+0.49% reinvested", ts: t0 + 61 * day },
+    { kind: "div", what: "+0.52% reinvested", ts: t0 + 33 * day },
+  ];
+  $("simNote").hidden = false;
+}
+
+/* ── render ── */
+const dstr = (ts) => new Date(ts * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase();
+
+function render() {
+  const now = S.now || Date.now() / 1000;
+  const days = Math.max(0, Math.round((S.maturity - now) / 86400));
+  const matured = now >= S.maturity && S.maturity > 0;
+  const drip = S.dIndex / S.dIndex0 - 1;
+
+  $("mMaturity").textContent = S.maturity ? dstr(S.maturity) + " " + new Date(S.maturity * 1000).getFullYear() : "—";
+  $("mDays").textContent = String(days);
+  $("mSync").textContent = S.synced ? "synced" : "classification pending";
+  $("mSync").style.color = S.synced ? "var(--green)" : "var(--amber)";
+  $("phActive").classList.toggle("on", !matured);
+  $("phMatured").classList.toggle("on", matured && !S.settled);
+  $("phSettled").classList.toggle("on", S.settled);
+  // settle() is permissionless: anyone may freeze dT once matured (it reverts until every
+  // multiplier change is classified — the accountant is the gate, not the caller).
+  $("settleBtn").hidden = !(matured && !S.settled && live);
+  // classification needs the CLASSIFIER role; the contract validates the tag against its bands
+  // either way, so a stray click can only revert, never misclassify.
+  $("classifyBtn").hidden = !(!S.synced && live);
+
+  $("sMult").textContent = S.uiMultiplier.toFixed(6);
+  $("sIdx").textContent = S.dIndex.toFixed(6) + "  (+" + (drip * 100).toFixed(3) + "%)";
+  $("sSplit").textContent = S.splitFactor.toFixed(2) + (S.splitFactor === 1 ? " — no splits this term" : "");
+  $("sNext").textContent = S.nextEvent > now ? dstr(S.nextEvent) : "none scheduled";
+  $("sClass").textContent = S.synced ? "all events classified" : "PENDING";
+  $("sClass").style.color = S.synced ? "var(--text)" : "var(--amber)";
+  // pool health: price vs the seeded LP range; fair value from accrued + assumed remaining drip
+  const fairPt = 1 / (S.dIndex / S.dIndex0 + CONFIG.remainingDripPct / 100);
+  const poolRow = (id, px, range, fair) => {
+    const el = $(id);
+    if (px == null) { el.textContent = "no pool yet"; el.style.color = "var(--dim)"; return; }
+    const ok = px >= range[0] && px <= range[1];
+    el.textContent = px.toFixed(5) + " " + CONFIG.symbol + " · fair ~" + fair.toFixed(5) + (ok ? " — in range" : " — RE-RANGE LP");
+    el.style.color = ok ? "var(--text)" : "var(--amber)";
+  };
+  if (S.poolPx) {
+    poolRow("sPtPool", S.poolPx.pt, CONFIG.ptRange, fairPt);
+    poolRow("sYtPool", S.poolPx.yt, CONFIG.ytRange, Math.max(1 - fairPt, 0.0005));
+  }
+  swapPreview();
+  earnPreview();
+  $("sCap").textContent = S.cap > 0
+    ? fmt(S.vaultBal, 1) + " / " + fmt(S.cap, 0)
+    : "uncapped";
+
+  $("posStock").textContent = fmt(S.balances.stock);
+  $("posPt").textContent = fmt(S.balances.pt);
+  $("posYt").textContent = fmt(S.balances.yt);
+  $("posDrip").textContent = "+" + (drip * 100).toFixed(3) + "%";
+  $("balPare").textContent = "bal " + fmt(S.balances.stock);
+  $("balMerge").textContent = "max " + fmt(Math.min(S.balances.pt, S.balances.yt));
+  $("redPtBal").textContent = fmt(S.balances.pt);
+  $("redYtBal").textContent = fmt(S.balances.yt);
+  $("redPtOut").textContent = fmt(S.balances.pt * S.dIndex0 / S.dIndex) + " " + CONFIG.symbol;
+  const grossYt = S.balances.yt * (S.dIndex - S.dIndex0) / S.dIndex;
+  $("redYtOut").textContent = fmt(grossYt * (1 - CONFIG.ytYieldFeeBps / 10000)) + " " + CONFIG.symbol + " (the drip, − 5% yield fee)";
+  const rp = $("execRedeemPt"), ry = $("execRedeemYt");
+  rp.disabled = ry.disabled = !S.settled;
+  rp.textContent = S.settled ? "REDEEM PT" : "REDEEM PT — after maturity";
+  ry.textContent = S.settled ? "REDEEM YT" : "REDEEM YT — after maturity";
+
+  const led = $("ledger");
+  led.innerHTML = "";
+  if (!S.synced) {
+    led.insertAdjacentHTML("beforeend",
+      `<div class="lrow"><span class="tag pend">PEND</span><span class="what">multiplier change awaiting classification</span><span class="when">now</span></div>`);
+  }
+  for (const e of S.ledger) {
+    const cls = e.kind === "div" ? "div" : "split";
+    const tag = e.kind === "div" ? "DIV" : "SPLIT";
+    led.insertAdjacentHTML("beforeend",
+      `<div class="lrow"><span class="tag ${cls}">${tag}</span><span class="what">${e.what}</span><span class="when">${dstr(e.ts)}</span></div>`);
+  }
+  if (!S.ledger.length && S.synced) {
+    led.innerHTML = `<div class="lrow"><span class="what" style="color:var(--dim)">no multiplier events this term yet</span></div>`;
+  }
+  previews();
+  drawChart();
+}
+
+function previews() {
+  const a = parseFloat($("amtPare").value) || 0;
+  const fee = a * CONFIG.splitFeeBps / 10000;
+  $("outPt").textContent = fmt(a - fee) + " p" + CONFIG.seriesTag;
+  $("outYt").textContent = fmt(a - fee) + " y" + CONFIG.seriesTag;
+  $("outFee").textContent = fmt(fee) + " " + CONFIG.symbol;
+  const m = parseFloat($("amtMerge").value) || 0;
+  $("outMerge").textContent = fmt(m) + " " + CONFIG.symbol;
+}
+
+/* ── chart: single-series stepped line of dividendIndex ── */
+const CH = { w: 640, h: 220, padL: 10, padR: 64, padT: 16, padB: 24, pts: [] };
+function drawChart() {
+  const svg = $("chart");
+  const cps = S.checkpoints;
+  if (cps.length < 1) { svg.innerHTML = ""; return; }
+  const now = S.now || Date.now() / 1000;
+  const t0 = cps[0][0], t1 = Math.max(S.maturity || now, now);
+  const v0 = S.dIndex0;
+  const vMax = Math.max(...cps.map(c => c[1]));
+  const span = Math.max(vMax - v0, 0.004); // floor so a young term still has scale
+  const X = (t) => CH.padL + (t - t0) / (t1 - t0) * (CH.w - CH.padL - CH.padR);
+  const Y = (v) => CH.h - CH.padB - (v - v0) / (span * 1.18) * (CH.h - CH.padT - CH.padB);
+
+  let el = "";
+  // recessive horizontal grid: baseline + two lines
+  for (const g of [0, 0.5, 1]) {
+    const y = Y(v0 + span * 1.18 * g).toFixed(1);
+    el += `<line x1="${CH.padL}" x2="${CH.w - CH.padR}" y1="${y}" y2="${y}" stroke="#212622" stroke-width="1"/>`;
+    el += `<text x="${CH.w - CH.padR + 8}" y="${+y + 3.5}" fill="#59605A" font-size="10" font-family="Geist Mono, monospace">+${(span * 1.18 * g * 100).toFixed(2)}%</text>`;
+  }
+  // stepped path, extended flat to "now"
+  const steps = [...cps, [Math.min(now, t1), cps[cps.length - 1][1]]];
+  let d = `M ${X(steps[0][0]).toFixed(1)} ${Y(steps[0][1]).toFixed(1)}`;
+  for (let i = 1; i < steps.length; i++) {
+    d += ` H ${X(steps[i][0]).toFixed(1)} V ${Y(steps[i][1]).toFixed(1)}`;
+  }
+  el += `<path d="${d}" fill="none" stroke="#3CE3A7" stroke-width="2"/>`;
+  // classified-dividend markers: pixel squares (brand mark language)
+  for (let i = 1; i < cps.length; i++) {
+    el += `<rect x="${(X(cps[i][0]) - 4).toFixed(1)}" y="${(Y(cps[i][1]) - 4).toFixed(1)}" width="8" height="8" fill="#3CE3A7"/>`;
+  }
+  // latest value direct label
+  const last = cps[cps.length - 1];
+  el += `<text x="${(X(Math.min(now, t1)) + 6).toFixed(1)}" y="${(Y(last[1]) - 8).toFixed(1)}" fill="#EDEFE8" font-size="11" font-family="Geist Mono, monospace">+${((last[1] / v0 - 1) * 100).toFixed(3)}%</text>`;
+  // crosshair placeholder
+  el += `<line id="xhair" x1="0" x2="0" y1="${CH.padT}" y2="${CH.h - CH.padB}" stroke="#2B322C" stroke-width="1" visibility="hidden"/>`;
+  svg.innerHTML = el;
+  CH.pts = cps; CH.t0 = t0; CH.t1 = t1; CH.X = X; CH.Y = Y;
+
+  $("chartLatest").textContent = "index " + last[1].toFixed(6);
+  $("chartX0").textContent = dstr(t0);
+  $("chartX1").textContent = dstr(t1) + " · maturity";
+}
+
+/* hover: crosshair + tooltip (value in force at the hovered time) */
+$("chartWrap").addEventListener("mousemove", (ev) => {
+  if (!CH.pts.length) return;
+  const svg = $("chart"), tip = $("chartTip");
+  const r = svg.getBoundingClientRect();
+  const fx = (ev.clientX - r.left) / r.width * CH.w;
+  if (fx < CH.padL || fx > CH.w - CH.padR) { tip.style.display = "none"; return; }
+  const t = CH.t0 + (fx - CH.padL) / (CH.w - CH.padL - CH.padR) * (CH.t1 - CH.t0);
+  let v = CH.pts[0][1];
+  for (const [ts, val] of CH.pts) if (ts <= t) v = val;
+  const xh = svg.querySelector("#xhair");
+  xh.setAttribute("x1", fx.toFixed(1)); xh.setAttribute("x2", fx.toFixed(1));
+  xh.setAttribute("visibility", "visible");
+  tip.style.display = "block";
+  tip.style.left = (ev.clientX - r.left) + "px";
+  tip.style.top = (CH.Y(v) / CH.h * r.height) + "px";
+  tip.innerHTML = `${dstr(t)} · index ${v.toFixed(6)} · <b>+${((v / S.dIndex0 - 1) * 100).toFixed(3)}%</b>`;
+});
+$("chartWrap").addEventListener("mouseleave", () => {
+  $("chartTip").style.display = "none";
+  const xh = $("chart").querySelector("#xhair");
+  if (xh) xh.setAttribute("visibility", "hidden");
+});
+
+/* ── tabs ── */
+document.querySelectorAll(".tabs .tab").forEach((t) =>
+  t.addEventListener("click", () => {
+    document.querySelectorAll(".tabs .tab").forEach((x) => x.classList.toggle("on", x === t));
+    $("panelPare").hidden = t.dataset.tab !== "pair";
+    $("panelSwap").hidden = t.dataset.tab !== "swap";
+    $("panelEarn").hidden = t.dataset.tab !== "earn";
+    $("panelMerge").hidden = t.dataset.tab !== "merge";
+    $("panelRedeem").hidden = t.dataset.tab !== "redeem";
+  }),
+);
+document.querySelectorAll(".tab.dir").forEach((t) =>
+  t.addEventListener("click", () => {
+    document.querySelectorAll(".tab.dir").forEach((x) => x.classList.toggle("on", x === t));
+    S.swapDir = t.dataset.dir;
+    swapPreview();
+  }),
+);
+$("amtPare").addEventListener("input", previews);
+$("amtMerge").addEventListener("input", previews);
+$("balPare").addEventListener("click", () => { $("amtPare").value = ethers.formatEther(S.rawBal.stock); previews(); });
+$("balMerge").addEventListener("click", () => { $("amtMerge").value = ethers.formatEther(S.rawBal.pt < S.rawBal.yt ? S.rawBal.pt : S.rawBal.yt); previews(); });
+
+/* ── wallet + live wiring ── */
+const CHAIN_PARAMS = {
+  chainId: "0x" + CONFIG.chainId.toString(16),
+  chainName: "Robinhood Chain",
+  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  rpcUrls: ["https://rpc.mainnet.chain.robinhood.com"],
+  blockExplorerUrls: ["https://robinhoodchain.blockscout.com"],
+};
+async function ensureChain() {
+  try {
+    await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: CHAIN_PARAMS.chainId }] });
+  } catch (e) {
+    if (e.code === 4902 && CONFIG.chainId === 4663) {
+      await window.ethereum.request({ method: "wallet_addEthereumChain", params: [CHAIN_PARAMS] });
+    }
+    // best-effort: some wallets don't support programmatic switching — never block connect on it
+  }
+}
+async function wireWallet(silent) {
+  provider = new ethers.BrowserProvider(window.ethereum);
+  const accts = await provider.send(silent ? "eth_accounts" : "eth_requestAccounts", []);
+  if (!accts.length) return;
+  if (!silent) await ensureChain();
+  signer = await provider.getSigner();
+  account = await signer.getAddress();
+  const net = await provider.getNetwork();
+  if (Number(net.chainId) !== CONFIG.chainId && !silent) {
+    alert("Your wallet is on chain " + net.chainId + " — switch it to Robinhood Chain (" + CONFIG.chainId + ") before transacting.");
+  }
+  $("connect").textContent = account.slice(0, 6) + "…" + account.slice(-4);
+  if (live) refresh().catch(console.error);
+}
+$("connect").addEventListener("click", async () => {
+  if (!window.ethereum) { alert("No injected wallet found. WalletConnect lands in v1.1."); return; }
+  try { await wireWallet(false); }
+  catch (e) { if (e.code !== 4001 && e.code !== "ACTION_REJECTED") alert("Connect failed: " + (e.shortMessage || e.message)); }
+});
+if (window.ethereum) {
+  wireWallet(true).catch(() => {});
+  window.ethereum.on?.("accountsChanged", () => wireWallet(true).catch(() => {}));
+  window.ethereum.on?.("chainChanged", () => location.reload());
+}
+
+/* All tx amounts are exact raw on-chain units (BigInt wei). The AAPL token is ERC-8056:
+   wallets display balance × uiMultiplier, but the contract moves raw units — so anything
+   derived from a displayed number can exceed the real balance. Clamp instead of reverting. */
+const minBig = (a, b) => (a < b ? a : b);
+function say(id, msg, cls) {
+  const el = $(id);
+  el.className = "txmsg" + (cls ? " " + cls : "");
+  el.textContent = msg;
+}
+function errText(e) {
+  return e?.shortMessage || e?.reason || e?.message || String(e);
+}
+async function tx(label, fn, msgId) {
+  if (!live || !signer) { console.log("simulated:", label); return; }
+  try {
+    if (msgId) say(msgId, label + " — confirm in your wallet…", "dim");
+    const t = await fn();
+    if (msgId) say(msgId, label + " sent — waiting for the chain…", "dim");
+    await t.wait();
+    if (msgId) say(msgId, label + " confirmed ✓", "ok");
+    refresh().catch(console.error);
+  } catch (e) {
+    if (msgId) say(msgId, label + " failed: " + errText(e), "bad");
+    else alert(label + " failed: " + errText(e));
+  }
+}
+$("execPare").addEventListener("click", async () => {
+  if (!live || !signer) { console.log("simulated: split"); return; }
+  try {
+    let wei = ethers.parseEther($("amtPare").value || "0");
+    // The wallet shows scaled (× uiMultiplier) amounts; the chain moves raw. Never ask for
+    // more than the raw balance actually there.
+    if (wei > S.rawBal.stock) {
+      wei = S.rawBal.stock;
+      $("amtPare").value = ethers.formatEther(wei);
+      previews();
+    }
+    if (wei === 0n) { say("msgPare", "nothing to pair — balance is zero", "bad"); return; }
+    const stock = new ethers.Contract(CONFIG.stockToken, TOKEN_ABI, signer);
+    const vault = new ethers.Contract(CONFIG.vault, VAULT_ABI, signer);
+    const allowance = await stock.allowance(account, CONFIG.vault);
+    if (allowance < wei) {
+      say("msgPare", "step 1/2 — approve the vault in your wallet…", "dim");
+      await (await stock.approve(CONFIG.vault, wei)).wait();
+    }
+    await tx("split", () => vault.split(wei), "msgPare");
+  } catch (e) { say("msgPare", "failed: " + errText(e), "bad"); }
+});
+$("execMerge").addEventListener("click", () => {
+  let wei = ethers.parseEther($("amtMerge").value || "0");
+  const max = minBig(S.rawBal.pt, S.rawBal.yt);
+  if (wei > max) { wei = max; $("amtMerge").value = ethers.formatEther(wei); previews(); }
+  if (wei === 0n) { say("msgMerge", "nothing to merge", "bad"); return; }
+  tx("merge", () => new ethers.Contract(CONFIG.vault, VAULT_ABI, signer).merge(wei), "msgMerge");
+});
+$("execRedeemPt").addEventListener("click", () =>
+  tx("redeemPT", () => new ethers.Contract(CONFIG.vault, VAULT_ABI, signer).redeemPT(S.rawBal.pt), "msgRedeem"));
+$("execRedeemYt").addEventListener("click", () =>
+  tx("redeemYT", () => new ethers.Contract(CONFIG.vault, VAULT_ABI, signer).redeemYT(S.rawBal.yt), "msgRedeem"));
+
+/* ── earn (add liquidity to the series' Uniswap v3 pools) ──
+   The user commits X stock. We pair s of it so that the PT, the YT, and the remaining
+   stock are all used up at the pools' current prices and standard ranges:
+     X = s + 0.999·s·(k_pt + k_yt)   →   s = X / (1 + 0.999·k)
+   where k_* = stock needed per unit of PT/YT for a position in that pool's range. */
+const sqrtX96 = (price) => BigInt(Math.floor(Math.sqrt(price) * 2 ** 48)) << 48n;
+const tickFor = (price) => Math.floor(Math.log(price) / Math.log(1.0001));
+const snap = (tick, spacing, up) => (up ? Math.ceil(tick / spacing) : Math.floor(tick / spacing)) * spacing;
+const spacingFor = (fee) => ({ 100: 1, 500: 10, 3000: 60, 10000: 200 })[fee] || 60;
+function poolGeom(kind) {
+  const raw = S.poolRaw[kind];
+  if (!raw) return null;
+  const tokenA = kind === "pt" ? CONFIG.pt : CONFIG.yt;
+  const range = kind === "pt" ? CONFIG.ptRange : CONFIG.ytRange;
+  const fee = kind === "pt" ? CONFIG.ptFee : CONFIG.ytFee;
+  const flipped = tokenA.toLowerCase() > CONFIG.stockToken.toLowerCase(); // stock is token0
+  const token0 = flipped ? CONFIG.stockToken : tokenA, token1 = flipped ? tokenA : CONFIG.stockToken;
+  if (raw.token0.toLowerCase() !== token0.toLowerCase()) return null; // pool/token mismatch — refuse
+  const lo = flipped ? 1 / range[1] : range[0], hi = flipped ? 1 / range[0] : range[1];
+  // the position lives on tick-snapped bounds, so do the math on those exact prices
+  const tickLower = snap(tickFor(lo), spacingFor(fee), false), tickUpper = snap(tickFor(hi), spacingFor(fee), true);
+  const sp = Number(raw.sqrt) / 2 ** 96, spa = Math.sqrt(1.0001 ** tickLower), spb = Math.sqrt(1.0001 ** tickUpper);
+  const inRange = sp > spa && sp < spb;
+  // per 1 unit of liquidity L: a0 = L(√pb−√p)/(√p√pb), a1 = L(√p−√pa)
+  const a0PerL = (spb - sp) / (sp * spb), a1PerL = sp - spa;
+  // stock needed per unit of PT/YT
+  const k = flipped ? a0PerL / a1PerL : a1PerL / a0PerL;
+  return {
+    token0, token1, fee, flipped, inRange, k, a0PerL, a1PerL, tickLower, tickUpper,
+  };
+}
+function earnPlan(X) {
+  const g = { pt: poolGeom("pt"), yt: poolGeom("yt") };
+  if (!g.pt || !g.yt) return { err: "pools not open yet for this series" };
+  if (!g.pt.inRange || !g.yt.inRange) return { err: "a pool is priced outside its standard range right now — try again later" };
+  const k = g.pt.k + g.yt.k;
+  const s = X / (1 + 0.999 * k);
+  const strips = s * 0.999;
+  const legs = {};
+  for (const kind of ["pt", "yt"]) {
+    const stock = strips * g[kind].k;
+    legs[kind] = {
+      ...g[kind], strip: strips, stock,
+      amount0: g[kind].flipped ? stock : strips,
+      amount1: g[kind].flipped ? strips : stock,
+    };
+  }
+  return { X, s, strips, legs };
+}
+function earnPreview() {
+  const el = $("earnPare");
+  if (!el) return;
+  $("balEarn").textContent = "bal " + fmt(S.balances.stock);
+  const X = Number($("amtEarn").value) || 0;
+  const sym = CONFIG.symbol;
+  const plan = X > 0 ? earnPlan(X) : { err: "enter an amount" };
+  if (plan.err) {
+    el.textContent = plan.err; $("earnPt").textContent = "—"; $("earnYt").textContent = "—"; $("earnPx").textContent = "—";
+    return;
+  }
+  el.textContent = fmt(plan.s) + " " + sym + " → " + fmt(plan.strips) + " p" + sym + " + " + fmt(plan.strips) + " y" + sym;
+  $("earnPt").textContent = fmt(plan.legs.pt.strip) + " p" + sym + " + " + fmt(plan.legs.pt.stock) + " " + sym;
+  $("earnYt").textContent = fmt(plan.legs.yt.strip) + " y" + sym + " + " + fmt(plan.legs.yt.stock) + " " + sym;
+  $("earnPx").textContent = (S.poolPx?.pt ?? 0).toFixed(5) + " / " + (S.poolPx?.yt ?? 0).toFixed(5) + " " + sym + " per p/y";
+}
+$("amtEarn").addEventListener("input", earnPreview);
+$("balEarn").addEventListener("click", () => { $("amtEarn").value = ethers.formatEther(S.rawBal.stock); earnPreview(); });
+$("execEarn").addEventListener("click", async () => {
+  if (!live || !signer) { say("msgEarn", "connect a wallet first", "bad"); return; }
+  const out = $("earnResult"); out.innerHTML = "";
+  try {
+    let X = Number($("amtEarn").value) || 0;
+    const stockBal = Number(ethers.formatEther(S.rawBal.stock));
+    if (X > stockBal) { X = stockBal; $("amtEarn").value = ethers.formatEther(S.rawBal.stock); earnPreview(); }
+    if (X <= 0) { say("msgEarn", "nothing to provide — balance is zero", "bad"); return; }
+    const plan = earnPlan(X);
+    if (plan.err) { say("msgEarn", plan.err, "bad"); return; }
+    const E = (n) => ethers.parseEther(n.toFixed(18));
+    const erc = (a) => new ethers.Contract(a, TOKEN_ABI, signer);
+    const npmAddr = CONFIG.positionManager;
+
+    // 1. pair exactly s
+    let sWei = E(plan.s);
+    if (sWei > S.rawBal.stock) sWei = S.rawBal.stock;
+    const stock = erc(CONFIG.stockToken);
+    const vault = new ethers.Contract(CONFIG.vault, VAULT_ABI, signer);
+    if ((await stock.allowance(account, CONFIG.vault)) < sWei) {
+      say("msgEarn", "step 1/4 — approve the vault to pair…", "dim");
+      await (await stock.approve(CONFIG.vault, sWei)).wait();
+    }
+    say("msgEarn", "step 2/4 — paring " + fmt(plan.s) + " " + CONFIG.symbol + "…", "dim");
+    await (await vault.split(sWei)).wait();
+
+    // 2. mint both positions, clamping to what the wallet actually holds now
+    const bal = {};
+    for (const a of [CONFIG.stockToken, CONFIG.pt, CONFIG.yt]) bal[a.toLowerCase()] = await erc(a).balanceOf(account);
+    const ids = [];
+    let step = 3;
+    for (const kind of ["pt", "yt"]) {
+      const L = plan.legs[kind];
+      const want = { [L.token0.toLowerCase()]: E(L.amount0), [L.token1.toLowerCase()]: E(L.amount1) };
+      for (const t of [L.token0, L.token1]) {
+        const key = t.toLowerCase();
+        if (want[key] > bal[key]) want[key] = bal[key];
+        if ((await erc(t).allowance(account, npmAddr)) < want[key]) {
+          say("msgEarn", "step " + step + "/4 — approve " + (key === CONFIG.stockToken.toLowerCase() ? CONFIG.symbol : (kind === "pt" ? "p" : "y") + CONFIG.symbol) + " for the pool…", "dim");
+          await (await erc(t).approve(npmAddr, want[key])).wait();
+        }
+      }
+      const d0 = want[L.token0.toLowerCase()], d1 = want[L.token1.toLowerCase()];
+      say("msgEarn", "step " + step + "/4 — minting the " + (kind === "pt" ? "p" : "y") + CONFIG.symbol + "/" + CONFIG.symbol + " position…", "dim");
+      const npm = new ethers.Contract(npmAddr, NPM_ABI, signer);
+      const rc = await (await npm.mint({
+        token0: L.token0, token1: L.token1, fee: L.fee, tickLower: L.tickLower, tickUpper: L.tickUpper,
+        amount0Desired: d0, amount1Desired: d1,
+        amount0Min: d0 * 90n / 100n, amount1Min: d1 * 90n / 100n, // ratio guard against a moved price
+        recipient: account, deadline: Math.floor(Date.now() / 1000) + 1200,
+      })).wait();
+      const TRANSFER = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+      const log = rc.logs.find((l) => l.address.toLowerCase() === npmAddr.toLowerCase() && l.topics[0] === TRANSFER && /^0x0+$/.test(l.topics[1]));
+      const id = log ? BigInt(log.topics[3]).toString() : "?";
+      ids.push({ kind, id, hash: rc.hash });
+      for (const t of [L.token0, L.token1]) bal[t.toLowerCase()] = await erc(t).balanceOf(account);
+      step++;
+    }
+    say("msgEarn", "liquidity provided ✓ — two positions minted to your wallet", "ok");
+    const explorer = CONFIG.chainId === 4663 ? "https://robinhoodchain.blockscout.com/tx/" : null; // tx pages resolve instantly; NFT pages lag the indexer
+    out.innerHTML = ids.map((p) =>
+      (p.kind === "pt" ? "p" : "y") + CONFIG.symbol + "/" + CONFIG.symbol + " position <b>#" + p.id + "</b>" +
+      (explorer ? ' · <a href="' + explorer + p.hash + '" target="_blank" rel="noopener" style="color:var(--green)">mint tx ↗</a>' : "")).join("<br>") +
+      "<br>Positions are Uniswap v3 NFTs: fees accrue to them, and you can collect or close from any Uniswap v3 interface. Anything the pools didn't need stayed in your wallet.";
+    refresh().catch(console.error);
+  } catch (e) { say("msgEarn", "failed: " + errText(e), "bad"); refresh().catch(console.error); }
+});
+
+/* ── your LP positions in this series' pools: list what they'd return, withdraw in one tx ── */
+const MAX128 = (1n << 128n) - 1n;
+async function loadPositions() {
+  const box = $("earnPositions");
+  if (!box || !live || !account || !CONFIG.positionManager) { if (box) box.innerHTML = ""; return; }
+  try {
+    const ro = CONFIG.rpcUrl ? new ethers.JsonRpcProvider(CONFIG.rpcUrl) : provider;
+    const npm = new ethers.Contract(CONFIG.positionManager, NPM_ABI, ro);
+    const n = Number(await npm.balanceOf(account));
+    const mine = new Set([CONFIG.stockToken, CONFIG.pt, CONFIG.yt].map((a) => a.toLowerCase()));
+    const rows = [];
+    for (let i = 0; i < Math.min(n, 40); i++) {
+      const id = await npm.tokenOfOwnerByIndex(account, i);
+      const p = await npm.positions(id);
+      const t0 = p.token0.toLowerCase(), t1 = p.token1.toLowerCase();
+      if (!mine.has(t0) || !mine.has(t1) || p.liquidity === 0n) continue;
+      const kind = [t0, t1].includes(CONFIG.pt.toLowerCase()) ? "pt" : "yt";
+      // simulate a full withdrawal to show what comes back (principal + fees)
+      let a0 = 0n, a1 = 0n;
+      try {
+        const calls = [
+          npm.interface.encodeFunctionData("decreaseLiquidity", [{ tokenId: id, liquidity: p.liquidity, amount0Min: 0n, amount1Min: 0n, deadline: Math.floor(Date.now() / 1000) + 600 }]),
+          npm.interface.encodeFunctionData("collect", [{ tokenId: id, recipient: account, amount0Max: MAX128, amount1Max: MAX128 }]),
+        ];
+        const res = await npm.multicall.staticCall(calls, { from: account });
+        [a0, a1] = npm.interface.decodeFunctionResult("collect", res[1]);
+      } catch {}
+      const raw = S.poolRaw[kind];
+      let inRange = null;
+      if (raw) { const tick = Math.floor(Math.log(Number(raw.sqrt) / 2 ** 96) / Math.log(1.0001) * 2); inRange = tick >= Number(p.tickLower) && tick < Number(p.tickUpper); }
+      const symA = (kind === "pt" ? "p" : "y") + CONFIG.symbol;
+      const amtFor = (t, a) => t === CONFIG.stockToken.toLowerCase() ? fmt(Number(ethers.formatEther(a))) + " " + CONFIG.symbol : fmt(Number(ethers.formatEther(a))) + " " + symA;
+      rows.push({ id: id.toString(), liquidity: p.liquidity, kind, symA, back: amtFor(t0, a0) + " + " + amtFor(t1, a1), inRange });
+    }
+    if (!rows.length) { box.innerHTML = ""; return; }
+    box.innerHTML = '<div class="pos-lp"><div class="ttl">YOUR POSITIONS IN THESE POOLS</div>' + rows.map((r) =>
+      '<div class="row"><span class="l">#' + r.id + " · " + r.symA + "/" + CONFIG.symbol +
+      '<small' + (r.inRange === false ? ' class="out"' : "") + ">withdraw returns ≈ " + r.back + (r.inRange === false ? " · out of range, not earning" : r.inRange ? " · in range, earning" : "") + "</small></span>" +
+      '<button class="wd" data-id="' + r.id + '" data-liq="' + r.liquidity.toString() + '">WITHDRAW</button></div>').join("") + "</div>";
+    box.querySelectorAll(".wd").forEach((b) => b.addEventListener("click", () => withdrawPosition(b)));
+  } catch (e) { console.warn("positions:", e); }
+}
+async function withdrawPosition(btn) {
+  if (!signer) return;
+  const id = BigInt(btn.dataset.id), liq = BigInt(btn.dataset.liq);
+  btn.disabled = true; btn.textContent = "SIGN…";
+  try {
+    const npm = new ethers.Contract(CONFIG.positionManager, NPM_ABI, signer);
+    // one transaction: pull all liquidity, collect it plus fees to the wallet, burn the empty NFT
+    const calls = [
+      npm.interface.encodeFunctionData("decreaseLiquidity", [{ tokenId: id, liquidity: liq, amount0Min: 0n, amount1Min: 0n, deadline: Math.floor(Date.now() / 1000) + 1200 }]),
+      npm.interface.encodeFunctionData("collect", [{ tokenId: id, recipient: account, amount0Max: MAX128, amount1Max: MAX128 }]),
+      npm.interface.encodeFunctionData("burn", [id]),
+    ];
+    say("msgEarn", "withdrawing position #" + id + "… confirm in your wallet", "dim");
+    await (await npm.multicall(calls)).wait();
+    say("msgEarn", "position #" + id + " withdrawn ✓ — liquidity and fees are back in your wallet", "ok");
+    refresh().catch(console.error);
+  } catch (e) { say("msgEarn", "withdraw failed: " + errText(e), "bad"); btn.disabled = false; btn.textContent = "WITHDRAW"; }
+}
+
+/* ── swap (secondary market, Uniswap v3 pools) ── */
+function swapLegs() {
+  const d = S.swapDir;
+  const px = S.poolPx || {};
+  // px.* = AAPL per PT/YT
+  const legs = {
+    buyPt:  { tin: CONFIG.stockToken, tout: CONFIG.pt, fee: CONFIG.ptFee, inSym: CONFIG.symbol, outSym: "p" + CONFIG.symbol, bal: "stock", px: px.pt, out: (a) => a / px.pt, slip: 0.01 },
+    sellPt: { tin: CONFIG.pt, tout: CONFIG.stockToken, fee: CONFIG.ptFee, inSym: "p" + CONFIG.symbol, outSym: CONFIG.symbol, bal: "pt", px: px.pt, out: (a) => a * px.pt, slip: 0.01 },
+    buyYt:  { tin: CONFIG.stockToken, tout: CONFIG.yt, fee: CONFIG.ytFee, inSym: CONFIG.symbol, outSym: "y" + CONFIG.symbol, px: px.yt, out: (a) => a / px.yt, slip: 0.03 },
+    sellYt: { tin: CONFIG.yt, tout: CONFIG.stockToken, fee: CONFIG.ytFee, inSym: "y" + CONFIG.symbol, outSym: CONFIG.symbol, bal: "yt", px: px.yt, out: (a) => a * px.yt, slip: 0.03 },
+  };
+  const l = legs[d];
+  l.balKey = d === "buyPt" || d === "buyYt" ? "stock" : d === "sellPt" ? "pt" : "yt";
+  return l;
+}
+/* Real quote from the pool's in-range liquidity (single-range v3 math — the protocol's positions
+   are the pool's liquidity, so this is exact until the trade would push price out of that range). */
+function swapQuote(l, amountIn) {
+  const kind = [l.tin, l.tout].map((a) => a.toLowerCase()).includes(CONFIG.pt.toLowerCase()) ? "pt" : "yt";
+  const g = poolGeom(kind), liq = S.poolLiq[kind];
+  if (!g || liq == null) return null;
+  const L = Number(liq) / 1e18;
+  const sp = Number(S.poolRaw[kind].sqrt) / 2 ** 96;
+  const spa = Math.sqrt(1.0001 ** g.tickLower), spb = Math.sqrt(1.0001 ** g.tickUpper);
+  const zeroForOne = l.tin.toLowerCase() === g.token0.toLowerCase();
+  const feeMul = 1 - l.fee / 1e6, net = amountIn * feeMul;
+  let out, exceeds, max;
+  if (L <= 0) { out = 0; exceeds = amountIn > 0; max = 0; }
+  else if (zeroForOne) { // selling token0: price falls toward the range floor
+    max = L * (1 / spa - 1 / sp) / feeMul;
+    const spNew = L * sp / (L + net * sp);
+    exceeds = spNew < spa;
+    out = L * (sp - Math.max(spNew, spa));
+  } else { // selling token1: price rises toward the range ceiling
+    max = L * (spb - sp) / feeMul;
+    const spNew = sp + net / L;
+    exceeds = spNew > spb;
+    const spc = Math.min(spNew, spb);
+    out = L * (spc - sp) / (sp * spc);
+  }
+  const spotOut = l.out(amountIn) * feeMul;
+  const impact = spotOut > 0 ? Math.max(0, 1 - out / spotOut) : 0;
+  return { out, impact, exceeds, max: Math.max(0, max) };
+}
+function swapPreview() {
+  const el = $("swapOut");
+  if (!el) return;
+  const l = swapLegs();
+  $("swapInSym").textContent = l.inSym;
+  $("balSwap").textContent = "bal " + fmt(S.balances[l.balKey]);
+  const btn = $("execSwap");
+  const imp = $("swapImpact");
+  if (!l.px) { el.textContent = "pool not found"; $("swapPrice").textContent = "—"; $("swapMin").textContent = "—"; imp.textContent = "—"; return; }
+  const amt = Number($("amtSwap").value) || 0;
+  $("swapPrice").textContent = l.px.toFixed(5) + " " + CONFIG.symbol + " per " + (l.inSym === CONFIG.symbol ? l.outSym : l.inSym);
+  const q = swapQuote(l, amt);
+  const net = q ? q.out : l.out(amt) * (1 - l.fee / 1e6);
+  if (q && q.exceeds) {
+    el.textContent = "bigger than the pool's depth — max ≈ " + fmt(q.max) + " " + l.inSym;
+    el.style.color = "var(--red)";
+    $("swapMin").textContent = "—"; imp.textContent = "—";
+    btn.disabled = true;
+    return;
+  }
+  el.style.color = ""; btn.disabled = false;
+  el.textContent = fmt(net) + " " + l.outSym;
+  const min = net * (1 - l.slip);
+  $("swapMin").textContent = fmt(min) + " " + l.outSym + " (" + (l.slip * 100).toFixed(0) + "% slippage guard)";
+  if (q) {
+    const pct = q.impact * 100;
+    imp.textContent = (pct < 0.01 ? "<0.01" : pct.toFixed(2)) + "%" + (pct > 5 ? " — large trade for this pool" : pct > 2 ? " — thin pool" : "");
+    imp.style.color = pct > 5 ? "var(--red)" : pct > 2 ? "var(--amber)" : "";
+  } else imp.textContent = "—";
+}
+$("amtSwap").addEventListener("input", swapPreview);
+$("balSwap").addEventListener("click", () => {
+  const l = swapLegs();
+  $("amtSwap").value = ethers.formatEther(S.rawBal[l.balKey]);
+  swapPreview();
+});
+$("execSwap").addEventListener("click", async () => {
+  try {
+    if (!live || !signer) { say("msgSwap", "connect your wallet first", "bad"); return; }
+    if (!CONFIG.swapRouter) { say("msgSwap", "swap routing not configured", "bad"); return; }
+    const l = swapLegs();
+    if (!l.px) { say("msgSwap", "pool not found for this pair", "bad"); return; }
+    let wei = ethers.parseEther($("amtSwap").value || "0");
+    if (wei > S.rawBal[l.balKey]) { wei = S.rawBal[l.balKey]; $("amtSwap").value = ethers.formatEther(wei); swapPreview(); }
+    if (wei === 0n) { say("msgSwap", "nothing to swap", "bad"); return; }
+    const amtF = Number(ethers.formatEther(wei));
+    const q = swapQuote(l, amtF);
+    if (q && q.exceeds) { say("msgSwap", "bigger than the pool's depth — max ≈ " + fmt(q.max) + " " + l.inSym, "bad"); return; }
+    const expected = q ? q.out : l.out(amtF) * (1 - l.fee / 1e6);
+    const minOut = ethers.parseEther((expected * (1 - l.slip)).toFixed(18));
+    const tin = new ethers.Contract(l.tin, TOKEN_ABI, signer);
+    const allowance = await tin.allowance(account, CONFIG.swapRouter);
+    if (allowance < wei) {
+      say("msgSwap", "step 1/2 — approve the router in your wallet…", "dim");
+      await (await tin.approve(CONFIG.swapRouter, wei)).wait();
+    }
+    const router = new ethers.Contract(CONFIG.swapRouter, ROUTER_ABI, signer);
+    await tx("swap", () => router.exactInputSingle({
+      tokenIn: l.tin, tokenOut: l.tout, fee: l.fee, recipient: account,
+      amountIn: wei, amountOutMinimum: minOut, sqrtPriceLimitX96: 0n,
+    }), "msgSwap");
+  } catch (e) { say("msgSwap", "failed: " + (e.shortMessage || e.reason || e.message), "bad"); }
+});
+$("settleBtn").addEventListener("click", () =>
+  tx("settle", () => new ethers.Contract(CONFIG.vault, VAULT_ABI, signer).settle()));
+
+/* Classify a pending multiplier change: sync (record it), then tag it. The tag is picked with
+   the same bands the contract enforces — dividend for small growth, clean-ratio split for big
+   jumps — and the contract re-validates on-chain, so a wrong local pick simply reverts. */
+$("classifyBtn").addEventListener("click", async () => {
+  if (!signer) { alert("Connect your wallet first (the one holding the CLASSIFIER role)."); return; }
+  try {
+    const a = new ethers.Contract(CONFIG.accountant, ACCT_ABI, signer);
+    let [exists, collapsed, , oldM, newM] = await a.pending();
+    if (!exists) {
+      await (await a.sync()).wait();
+      [exists, collapsed, , oldM, newM] = await a.pending();
+    }
+    if (!exists) { alert("Nothing pending — already classified."); refresh().catch(console.error); return; }
+    if (collapsed) { alert("Composite change detected — this one needs the guardian path. Tell Claude."); return; }
+    const r = Number(oldM > 0n ? (newM * 10n ** 18n) / oldM : 0n) / 1e18;
+    if (r > 1 && r <= 1.03) {
+      await (await a.classifyDividend()).wait();
+      alert("Classified as dividend: +" + ((r - 1) * 100).toFixed(3) + "% reinvested.");
+    } else {
+      // look for a clean small-integer split ratio
+      let found = null;
+      for (let den = 1; den <= 20 && !found; den++) {
+        const num = Math.round(r * den);
+        if (num >= 1 && num <= 20 && num !== den && Math.abs(num / den - r) <= 1e-6 && Math.abs(r - 1) >= 0.2) {
+          found = { num, den };
+        }
+      }
+      if (!found) { alert("Ratio " + r.toFixed(6) + " fits neither band — guardian path. Tell Claude."); return; }
+      await (await a.classifySplit(found.num, found.den)).wait();
+      alert("Classified as " + found.num + ":" + found.den + " stock split.");
+    }
+    refresh().catch(console.error);
+  } catch (e) { alert("Classification failed: " + (e.shortMessage || e.message)); }
+});
+
+/* Read-only path for visitors with no RPC and no wallet: the cached /api/series snapshot. */
+async function refreshFromApi() {
+  const r = await fetch(CONFIG.apiUrl);
+  if (!r.ok) return;
+  const d = await r.json();
+  Object.assign(S, {
+    now: d.asOf, uiMultiplier: d.uiMultiplier, dIndex: d.dividendIndex,
+    splitFactor: d.splitFactor, synced: d.isSynced, maturity: d.maturity,
+    settled: d.settled, dIndex0: d.dividendIndex0, cap: d.depositCap,
+    vaultBal: d.vaultBalance, checkpoints: d.checkpoints,
+    nextEvent: d.newUIMultiplier !== d.uiMultiplier ? d.effectiveAt : 0,
+  });
+  S.ledger = S.checkpoints.slice(1).reverse().map(([ts, v], i, arr) => {
+    const prev = i < arr.length - 1 ? arr[i + 1][1] : S.checkpoints[0][1];
+    return { kind: "div", what: "+" + ((v / prev - 1) * 100).toFixed(2) + "% reinvested", ts };
+  });
+  $("statusPill").classList.remove("pre");
+  $("statusText").textContent = "LIVE · " + CONFIG.chainId;
+  $("simNote").hidden = true;
+  render();
+}
+
+async function refresh() {
+  const ro = CONFIG.rpcUrl ? new ethers.JsonRpcProvider(CONFIG.rpcUrl) : provider;
+  if (!ro) { refreshFromApi().catch(console.error); return; }
+  const stock = new ethers.Contract(CONFIG.stockToken, TOKEN_ABI, ro);
+  const vault = new ethers.Contract(CONFIG.vault, VAULT_ABI, ro);
+  const acct = new ethers.Contract(CONFIG.accountant, ACCT_ABI, ro);
+  const E = (v) => Number(ethers.formatEther(v));
+  S.now = Number((await ro.getBlock("latest")).timestamp);
+  const [mult, dIdx, sf, synced, maturity, settled, dIdx0, effAt, newMult, cpCount, cap, vaultBal] =
+    await Promise.all([
+      stock.uiMultiplier(), acct.dividendIndex(), acct.splitFactor(), acct.isSynced(),
+      vault.maturity(), vault.settled(), vault.dividendIndex0(),
+      stock.effectiveAt(), stock.newUIMultiplier(), acct.checkpointCount(),
+      vault.depositCap(), stock.balanceOf(CONFIG.vault),
+    ]);
+  Object.assign(S, {
+    uiMultiplier: E(mult), dIndex: E(dIdx), splitFactor: E(sf), synced,
+    maturity: Number(maturity), settled, dIndex0: E(dIdx0),
+    nextEvent: newMult !== mult ? Number(effAt) : 0,
+    cap: E(cap), vaultBal: E(vaultBal),
+  });
+  S.checkpoints = [];
+  for (let i = 0; i < Number(cpCount); i++) {
+    const cp = await acct.checkpointAt(i);
+    S.checkpoints.push([Number(cp.timestamp), E(cp.index)]);
+  }
+  S.ledger = S.checkpoints.slice(1).reverse().map(([ts, v], i, arr) => {
+    const prev = i < arr.length - 1 ? arr[i + 1][1] : S.checkpoints[0][1];
+    return { kind: "div", what: "+" + (((v / prev) - 1) * 100).toFixed(2) + "% reinvested", ts };
+  });
+  if (account) {
+    const [ptA, ytA] = await Promise.all([vault.pt(), vault.yt()]);
+    const pt = new ethers.Contract(ptA, TOKEN_ABI, ro);
+    const yt = new ethers.Contract(ytA, TOKEN_ABI, ro);
+    const [b0, b1, b2] = await Promise.all([stock.balanceOf(account), pt.balanceOf(account), yt.balanceOf(account)]);
+    S.balances = { stock: E(b0), pt: E(b1), yt: E(b2) };
+    S.rawBal = { stock: b0, pt: b1, yt: b2 };
+  }
+  // secondary market: pAAPL/AAPL and yAAPL/AAPL pool prices (best-effort — never blocks the app)
+  try {
+    if (CONFIG.uniFactory && CONFIG.pt) {
+      const fac = new ethers.Contract(CONFIG.uniFactory, UNI_FACTORY_ABI, ro);
+      if (!S.poolAddr) {
+        const [pa, ya] = await Promise.all([
+          fac.getPool(CONFIG.pt, CONFIG.stockToken, CONFIG.ptFee),
+          fac.getPool(CONFIG.yt, CONFIG.stockToken, CONFIG.ytFee),
+        ]);
+        S.poolAddr = { pt: pa, yt: ya };
+      }
+      const readPx = async (addr, tokenA, key) => {
+        if (!addr || addr === ethers.ZeroAddress) { S.poolRaw[key] = null; return null; }
+        const pool = new ethers.Contract(addr, UNI_POOL_ABI, ro);
+        const [s0, t0, liq] = await Promise.all([pool.slot0(), pool.token0(), pool.liquidity()]);
+        S.poolRaw[key] = { sqrt: s0[0], token0: t0 }; // raw slot0 for the EARN tab's liquidity math
+        S.poolLiq[key] = liq;
+        let px = Number(s0[0]) ** 2 / 2 ** 192; // token1 per token0
+        if (t0.toLowerCase() !== tokenA.toLowerCase()) px = 1 / px;
+        return px; // AAPL per PT/YT
+      };
+      const [pp, yp] = await Promise.all([readPx(S.poolAddr.pt, CONFIG.pt, "pt"), readPx(S.poolAddr.yt, CONFIG.yt, "yt")]);
+      S.poolPx = { pt: pp, yt: yp };
+    }
+  } catch (e) { console.warn("pool read:", e); }
+  $("statusPill").classList.remove("pre");
+  $("statusText").textContent = "LIVE · " + CONFIG.chainId;
+  $("simNote").hidden = true;
+  render();
+  loadPositions().catch(console.warn);
+}
+
+if (live) {
+  $("statusText").textContent = "CONNECTING…";
+  refresh().catch((e) => { console.error(e); refreshFromApi().catch(console.error); });
+  setInterval(() => refresh().catch(() => {}), 60_000);
+} else { simulate(); render(); }
+</script>
+  <script src="/wallet.js"></script>
+</body>
+</html>
